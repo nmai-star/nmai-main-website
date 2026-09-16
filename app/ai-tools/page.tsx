@@ -254,16 +254,6 @@ export default function AIToolsPage() {
 
     const evaluateEnrollment = () => {
       try {
-        const adminRaw = localStorage.getItem("nmai-admin-session");
-        if (adminRaw) {
-          const adminSession = JSON.parse(adminRaw);
-          if (adminSession && adminSession.authorized === true) {
-            setCurrentUserEmail("admin@nmai.com");
-            setIsEnrolled(true);
-            return;
-          }
-        }
-
         const sessionRaw = localStorage.getItem("nmai-student-session");
         if (sessionRaw) {
           const session = JSON.parse(sessionRaw);
@@ -275,6 +265,7 @@ export default function AIToolsPage() {
         }
       } catch {}
       setIsEnrolled(false);
+      setCurrentUserEmail("");
     };
 
     evaluateEnrollment();

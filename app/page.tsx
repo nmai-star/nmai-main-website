@@ -671,16 +671,6 @@ export default function Home() {
 
     const updateSessionAndCourses = () => {
       try {
-        const adminSessionRaw = localStorage.getItem("nmai-admin-session");
-        if (adminSessionRaw) {
-          const adminSession = JSON.parse(adminSessionRaw);
-          if (adminSession && adminSession.authorized === true) {
-            setCurrentUserEmail("admin@nmai.com");
-            setCurrentStudentName("Admin");
-            setCurrentStudentImage("");
-            return;
-          }
-        }
         const sessionRaw = localStorage.getItem("nmai-student-session");
         if (sessionRaw) {
           const session = JSON.parse(sessionRaw);

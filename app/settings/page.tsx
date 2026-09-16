@@ -185,16 +185,6 @@ export default function ProfileSettingsPage() {
           }
         }
 
-        if (!email) {
-          const adminRaw = localStorage.getItem("nmai-admin-session");
-          if (adminRaw) {
-            const admin = JSON.parse(adminRaw);
-            if (admin && admin.authorized) {
-              email = "admin@nmai.com";
-            }
-          }
-        }
-
         if (email) {
           setCurrentUserEmail(email);
           const auth = checkStudentAuthorization(email);
@@ -208,13 +198,13 @@ export default function ProfileSettingsPage() {
             setInterest(auth.student.interest || INTEREST_OPTIONS[0]);
             setLevel(auth.student.level || "Beginner");
           } else {
-            // Fallback object for admin or new user without full record
+            // Fallback object for new user without full record
             const fallbackStudent: EnrolledStudent = {
               id: `student-${Date.now()}`,
               email,
               name: email.split("@")[0],
-              enrolledCourse: "All Access Pass",
-              enrolledCourses: ["*"],
+              enrolledCourse: "No Courses Assigned (Locked)",
+              enrolledCourses: [],
               status: "active",
               enrollmentDate: new Date().toISOString().split("T")[0],
             };

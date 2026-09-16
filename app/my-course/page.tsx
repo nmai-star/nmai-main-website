@@ -24,18 +24,6 @@ export default function MyCoursesPage() {
   useEffect(() => {
     const evaluate = () => {
       try {
-        const adminRaw = localStorage.getItem("nmai-admin-session");
-        if (adminRaw) {
-          const adminSession = JSON.parse(adminRaw);
-          if (adminSession && adminSession.authorized === true) {
-            setHasAccess(true);
-            setStudentEmail("Admin");
-            setStudentName("Administrator");
-            setCoursesSummary("All Access Pass (Super Admin)");
-            return;
-          }
-        }
-
         const sessionRaw = localStorage.getItem("nmai-student-session");
         if (sessionRaw) {
           const session = JSON.parse(sessionRaw);

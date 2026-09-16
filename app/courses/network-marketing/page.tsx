@@ -918,20 +918,7 @@ export default function Dashboard() {
   useEffect(() => {
     const evaluateAccess = () => {
       try {
-        // 1. Super-admin bypass: if site admin is logged in, allow instant access
-        const adminRaw = localStorage.getItem("nmai-admin-session");
-        if (adminRaw) {
-          const adminSession = JSON.parse(adminRaw);
-          if (adminSession && adminSession.authorized === true) {
-            setHasAccess(true);
-            setStudentEmail("Admin (Super Access)");
-            setStudentName("Administrator");
-            setStudentCoursesSummary("All Access Pass (Super Admin)");
-            return;
-          }
-        }
-
-        // 2. Student session check
+        // Student session check
         const sessionRaw = localStorage.getItem("nmai-student-session");
         if (sessionRaw) {
           const session = JSON.parse(sessionRaw);

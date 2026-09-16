@@ -33,9 +33,9 @@ export const INITIAL_ENROLLED_STUDENTS: EnrolledStudent[] = [
   {
     id: "student-2",
     email: "kranthi@gmail.com",
-    name: "Kranthi (Admin / Lead)",
-    enrolledCourse: "All Access Pass (NMAI Pro)",
-    enrolledCourses: ["*"],
+    name: "Kranthi",
+    enrolledCourse: "No Courses Assigned",
+    enrolledCourses: [],
     status: "active",
     enrollmentDate: "2026-01-10",
   },
@@ -43,8 +43,8 @@ export const INITIAL_ENROLLED_STUDENTS: EnrolledStudent[] = [
     id: "student-3",
     email: "krant@gmail.com",
     name: "Krant",
-    enrolledCourse: "All Access Pass",
-    enrolledCourses: ["*"],
+    enrolledCourse: "No Courses Assigned",
+    enrolledCourses: [],
     status: "active",
     enrollmentDate: "2026-01-10",
   },
@@ -262,24 +262,6 @@ export function hasAnyCourseAccess(email: string): boolean {
   if (!email) return false;
 
   const normalizedEmail = email.trim().toLowerCase();
-  if (
-    normalizedEmail === "admin@nmai.com" ||
-    normalizedEmail === "kranthi@gmail.com" ||
-    normalizedEmail === "krant@gmail.com"
-  ) {
-    return true;
-  }
-
-  if (typeof window !== "undefined") {
-    try {
-      const adminRaw = localStorage.getItem("nmai-admin-session");
-      if (adminRaw) {
-        const adminSession = JSON.parse(adminRaw);
-        if (adminSession && adminSession.authorized === true) return true;
-      }
-    } catch {}
-  }
-
   const auth = checkStudentAuthorization(normalizedEmail);
   if (!auth.authorized || !auth.student) return false;
 
@@ -321,29 +303,6 @@ export function hasCourseAccess(
   if (!email) return false;
 
   const normalizedEmail = email.trim().toLowerCase();
-
-  // Super-admin emails have automatic full access
-  if (
-    normalizedEmail === "admin@nmai.com" ||
-    normalizedEmail === "kranthi@gmail.com" ||
-    normalizedEmail === "krant@gmail.com"
-  ) {
-    return true;
-  }
-
-  // If super-admin session is active in the browser, allow preview access
-  if (typeof window !== "undefined") {
-    try {
-      const adminRaw = localStorage.getItem("nmai-admin-session");
-      if (adminRaw) {
-        const adminSession = JSON.parse(adminRaw);
-        if (adminSession && adminSession.authorized === true) {
-          return true;
-        }
-      }
-    } catch {}
-  }
-
   const auth = checkStudentAuthorization(normalizedEmail);
   if (!auth.authorized || !auth.student) return false;
 
