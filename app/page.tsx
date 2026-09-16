@@ -28,7 +28,9 @@ import {
   Code2,
   Compass,
   Crown,
+  ExternalLink,
   FileText,
+  Globe,
   GraduationCap,
   LayoutDashboard,
   Lock,
@@ -1839,30 +1841,43 @@ export default function Home() {
 
                 {/* PHOTO */}
 
-                <motion.div
-                  whileHover={{
-                    scale: 1.02,
-                  }}
-                  className="relative mx-auto w-full max-w-[320px]"
-                >
+                <div className="flex flex-col items-center">
+                  <motion.div
+                    whileHover={{
+                      scale: 1.02,
+                    }}
+                    className="relative mx-auto w-full max-w-[320px]"
+                  >
 
-                  <div className="absolute -inset-3 rounded-[28px] bg-gradient-to-br from-blue-500/30 to-cyan-400/20 blur-2xl" />
+                    <div className="absolute -inset-3 rounded-[28px] bg-gradient-to-br from-blue-500/30 to-cyan-400/20 blur-2xl" />
 
-                  <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#05070D]">
+                    <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#05070D]">
 
-                    <img
-                      src="/kranthi.png"
-                      alt="Kranthi Velpuri - Founder and CEO of NMAI"
-                      className="h-[390px] w-full object-cover object-top"
-                    />
+                      <img
+                        src="/kranthi.png"
+                        alt="Kranthi Velpuri - Founder and CEO of NMAI"
+                        className="h-[390px] w-full object-cover object-top"
+                      />
 
-                  </div>
+                    </div>
 
-                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-cyan-400/20 bg-[#070B14]/95 px-5 py-2.5 text-[10px] font-bold tracking-[0.16em] text-cyan-300 shadow-2xl backdrop-blur-xl">
-                    FOUNDER • NMAI
-                  </div>
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-cyan-400/20 bg-[#070B14]/95 px-5 py-2.5 text-[10px] font-bold tracking-[0.16em] text-cyan-300 shadow-2xl backdrop-blur-xl">
+                      FOUNDER • NMAI
+                    </div>
 
-                </motion.div>
+                  </motion.div>
+
+                  <a
+                    href="http://kranthivelpuri.lovable.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-7 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:text-white"
+                  >
+                    <Globe size={14} className="text-cyan-400" />
+                    <span>kranthivelpuri.lovable.app</span>
+                    <ExternalLink size={13} className="text-slate-400" />
+                  </a>
+                </div>
 
                 {/* CONTENT */}
 
@@ -1950,6 +1965,20 @@ export default function Home() {
                       not people who are afraid of it.”
                     </p>
 
+                  </div>
+
+                  {/* KNOW MORE ABOUT THE FOUNDER BUTTON */}
+                  <div className="mt-7 flex flex-wrap items-center gap-4">
+                    <a
+                      href="http://kranthivelpuri.lovable.app/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:brightness-110 hover:shadow-cyan-500/40"
+                    >
+                      <Globe size={16} className="text-white transition-transform duration-300 group-hover:rotate-12" />
+                      Know More About the Founder
+                      <ExternalLink size={14} className="opacity-85 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </a>
                   </div>
 
                 </div>
