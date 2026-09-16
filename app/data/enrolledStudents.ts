@@ -192,7 +192,7 @@ export function checkStudentAuthorization(email: string): {
   if (!found) {
     return {
       authorized: false,
-      message: `Account not found for "${normalizedEmail}". Please sign up to create your account.`,
+      message: `Access Denied: "${normalizedEmail}" is not an enrolled student. Access to NMAI is strictly restricted to authorized students. Please contact the administrator on WhatsApp to purchase enrollment.`,
     };
   }
 

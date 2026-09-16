@@ -8,28 +8,21 @@ import {
   ArrowLeft,
   ArrowRight,
   Bot,
-  Check,
   CheckCircle2,
   GraduationCap,
   Lock,
   Mail,
-  Shield,
+  MessageCircle,
   ShieldCheck,
   ShieldAlert,
   Sparkles,
   Zap,
   Eye,
   EyeOff,
-  User,
   X,
-  AlertTriangle,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
-import {
-  checkStudentAuthorization,
-  registerOrGetStudent,
-  INITIAL_ENROLLED_STUDENTS,
-} from "../data/enrolledStudents";
+import { checkStudentAuthorization } from "../data/enrolledStudents";
 import { playClickSound, preloadClickSound } from "../utils/sound";
 
 interface RippleEffect {
@@ -42,17 +35,12 @@ interface RippleEffect {
 
 export default function StudentLoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [gmail, setGmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  // Quick account selection feedback
-  const [selectedQuickAccount, setSelectedQuickAccount] = useState<string | null>(null);
 
   // Preload click sound on mount
   useEffect(() => {
@@ -79,16 +67,27 @@ export default function StudentLoginPage() {
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [customGoogleEmail, setCustomGoogleEmail] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
-  // Verify and complete student login (open to all; course permissions required for paid content)
+  // Strict verification: only pre-authorized enrolled students allowed!
   const authenticateStudent = (targetEmail: string, studentName?: string) => {
-    // Automatically registers new users (with 0 courses) or retrieves existing
-    const student = registerOrGetStudent(targetEmail, studentName);
+    const auth = checkStudentAuthorization(targetEmail);
+
+    if (!auth.authorized || !auth.student) {
+      const msg = `⛔ Access Denied: "${targetEmail}" is not an enrolled student. NMAI access is strictly restricted to registered students. Please contact support on WhatsApp to purchase enrollment.`;
+      setError(msg);
+      setGoogleError(msg);
+      setLoading(false);
+      setGoogleLoading(false);
+      return false;
+    }
+
+    const student = auth.student;
 
     if (student.status === "suspended") {
-      setError(
-        `⛔ Access Suspended: Account for "${targetEmail}" has been suspended by the administrator. Please contact support.`
-      );
+      const msg = `⛔ Access Suspended: Account for "${targetEmail}" has been suspended by the administrator. Please contact support.`;
+      setError(msg);
+      setGoogleError(msg);
       setLoading(false);
       setGoogleLoading(false);
       setShowGoogleModal(false);
@@ -109,11 +108,8 @@ export default function StudentLoginPage() {
     localStorage.setItem("nmai-student-session", JSON.stringify(session));
     localStorage.setItem("nmai-student-user", JSON.stringify(session));
 
-    const hasPaidCourses = Array.isArray(student.enrolledCourses) && student.enrolledCourses.length > 0;
     setSuccessMsg(
-      hasPaidCourses
-        ? `Welcome back, ${session.name}! Enrolled access verified. Redirecting to NMAI...`
-        : `Welcome, ${session.name}! Free membership created. Entering NMAI portal...`
+      `Welcome back, ${session.name}! Enrolled student access verified. Redirecting to NMAI...`
     );
     setShowGoogleModal(false);
 
@@ -128,27 +124,30 @@ export default function StudentLoginPage() {
   const handleGoogleClick = () => {
     playClickSound();
     setError(null);
+    setGoogleError(null);
     setShowGoogleModal(true);
   };
 
-  // Quick Account Selected from left column
-  const handleQuickAccountClick = (email: string) => {
+  // Google modal verification submit
+  const handleGoogleVerify = (e: React.FormEvent) => {
+    e.preventDefault();
     playClickSound();
-    setGmail(email);
-    setPassword("password123");
-    setError(null);
-    setSelectedQuickAccount(email);
-    setTimeout(() => setSelectedQuickAccount(null), 1800);
-  };
+    setGoogleError(null);
 
-  // Google Account picked from chooser
-  const handleSelectGoogleAccount = (emailToVerify: string, accountName: string) => {
-    playClickSound();
+    if (!customGoogleEmail.trim()) {
+      setGoogleError("Please enter your Gmail address.");
+      return;
+    }
+
+    if (!customGoogleEmail.includes("@")) {
+      setGoogleError("Please enter a valid email address (e.g. yourname@gmail.com).");
+      return;
+    }
+
     setGoogleLoading(true);
-    setError(null);
 
     setTimeout(() => {
-      authenticateStudent(emailToVerify, accountName);
+      authenticateStudent(customGoogleEmail);
     }, 600);
   };
 
@@ -160,7 +159,7 @@ export default function StudentLoginPage() {
     setSuccessMsg(null);
 
     if (!gmail.trim()) {
-      setError("Please enter your Gmail / email address.");
+      setError("Please enter your enrolled student Gmail address.");
       return;
     }
 
@@ -169,19 +168,19 @@ export default function StudentLoginPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    if (password.length < 4) {
+      setError("Please enter your student password.");
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      authenticateStudent(gmail, name || gmail.split("@")[0]);
-    }, 800);
+      authenticateStudent(gmail);
+    }, 700);
   };
 
-  // Delegated click capture to ensure any button or link click plays the sound effect
+  // Delegated click capture to ensure all buttons and links trigger click sound
   const handleContainerClickCapture = (e: React.MouseEvent) => {
     const target = (e.target as HTMLElement).closest("button, a, [role='button'], input[type='submit']");
     if (target) {
@@ -236,7 +235,7 @@ export default function StudentLoginPage() {
       {/* MAIN CONTAINER */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-5xl grid lg:grid-cols-12 gap-8 items-center">
-          {/* LEFT COLUMN: BRAND & VALUE PROPOSITION */}
+          {/* LEFT COLUMN: SECURITY & BRAND HIGHLIGHTS */}
           <motion.div
             initial={{ opacity: 0, x: -25 }}
             animate={{ opacity: 1, x: 0 }}
@@ -260,66 +259,75 @@ export default function StudentLoginPage() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/[0.06] px-3.5 py-1.5 text-xs font-semibold text-cyan-300 w-fit cursor-default shadow-sm hover:border-cyan-400/40 transition-colors"
             >
               <ShieldCheck size={14} className="text-cyan-400" />
-              Open Portal Access • Free Signup
+              Verified Enrolled Student Access Only
             </motion.div>
 
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-white xl:text-5xl leading-tight">
-              Sign up free to explore{" "}
+              Direct Sales & AI{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                NMAI courses & platform.
+                Learning Platform.
               </span>
             </h1>
 
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              Anyone can sign up and enter the portal! Course lessons, video training, and the <strong>NMAI Sales Objection Mentor</strong> Gem are paid premium features unlocked upon administrator approval. Free access to course content is not available.
+              NMAI provides specialized frameworks, training playbooks, and automated AI mentors for direct sales leaders. Platform access is strictly restricted to verified enrolled students.
             </p>
 
-            {/* QUICK LOGIN / PRE-AUTHORIZED ACCOUNTS SECTION */}
-            <motion.div
-              whileHover={{ y: -2, borderColor: "rgba(6, 182, 212, 0.3)" }}
-              className="mt-8 rounded-3xl border border-white/[0.08] bg-white/[0.02] p-5 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/5"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
-                  <span>👥</span> Quick Login / Pre-Authorized Accounts:
+            {/* VALUE PROPOSITION CARDS */}
+            <div className="mt-7 space-y-3">
+              <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 backdrop-blur-sm">
+                <div className="h-9 w-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-cyan-400 shrink-0 mt-0.5">
+                  <GraduationCap size={18} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Network Marketing Mastery</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Objection handling, team building, leadership models, and prospect closing frameworks.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 backdrop-blur-sm">
+                <div className="h-9 w-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0 mt-0.5">
+                  <Bot size={18} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">NMAI Sales Objection Mentor</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Exclusive custom Gemini AI trained specifically to handle direct sales objections in real time.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 backdrop-blur-sm">
+                <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                  <ShieldCheck size={18} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Protected Student Area</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Only accounts pre-authorized by NMAI administrators are granted access credentials.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* NOT ENROLLED CTA */}
+            <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <span>🔒</span> Need Course Access?
                 </p>
-                {selectedQuickAccount && (
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1"
-                  >
-                    <CheckCircle2 size={11} /> Filled!
-                  </motion.span>
-                )}
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Courses are strictly paid. Reach out on WhatsApp to purchase enrollment.
+                </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {INITIAL_ENROLLED_STUDENTS.map((s) => (
-                  <motion.button
-                    key={s.email}
-                    type="button"
-                    whileHover={{ scale: 1.05, y: -1 }}
-                    whileTap={{ scale: 0.93 }}
-                    onClick={() => handleQuickAccountClick(s.email)}
-                    className={`rounded-xl border px-3 py-1.5 text-xs transition-all duration-150 flex items-center gap-1.5 ${
-                      selectedQuickAccount === s.email
-                        ? "bg-cyan-500/20 border-cyan-400 text-cyan-200 shadow-md shadow-cyan-500/20"
-                        : "bg-white/[0.04] border-white/[0.08] text-slate-300 hover:border-cyan-400/50 hover:bg-white/[0.08] hover:text-white"
-                    }`}
-                    title={`Click to auto-fill credentials for: ${s.enrolledCourse}`}
-                  >
-                    <span>{s.email}</span>
-                    {selectedQuickAccount === s.email && (
-                      <Check size={12} className="text-cyan-400 animate-pulse" />
-                    )}
-                  </motion.button>
-                ))}
-              </div>
-              <p className="mt-2.5 text-[10px] text-slate-500">
-                You can also enter with <strong>any custom email or Google account</strong> — your account will be created immediately!
-              </p>
-            </motion.div>
+              <motion.a
+                href="https://wa.me/919177187024?text=Hi%20NMAI%20Admin,%20I%20want%20to%20enroll%20in%20an%20NMAI%20course"
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white transition shadow-md shadow-emerald-500/20"
+              >
+                <MessageCircle size={14} />
+                <span>Enroll on WhatsApp</span>
+              </motion.a>
+            </div>
           </motion.div>
 
           {/* RIGHT COLUMN: LOGIN CARD */}
@@ -341,61 +349,11 @@ export default function StudentLoginPage() {
                     />
                   </Link>
                 </motion.div>
-              </div>
-
-              {/* TABS WITH SMOOTH SLIDING PILL */}
-              <div className="relative flex items-center rounded-2xl bg-white/[0.04] p-1.5 border border-white/[0.08] mb-6">
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    setMode("signin");
-                    setError(null);
-                  }}
-                  className={`relative flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors duration-200 z-10 ${
-                    mode === "signin" ? "text-white" : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {mode === "signin" && (
-                    <motion.div
-                      layoutId="activeTabBadge"
-                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 shadow-md"
-                      transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                    />
-                  )}
-                  <span className="relative z-10">Student Sign In</span>
-                </motion.button>
-
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    setMode("signup");
-                    setError(null);
-                  }}
-                  className={`relative flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors duration-200 z-10 ${
-                    mode === "signup" ? "text-white" : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {mode === "signup" && (
-                    <motion.div
-                      layoutId="activeTabBadge"
-                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 shadow-md"
-                      transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                    />
-                  )}
-                  <span className="relative z-10">Free Signup</span>
-                </motion.button>
-              </div>
-
-              <div className="mb-6 text-center">
-                <h2 className="text-2xl font-bold text-white">
-                  {mode === "signin" ? "Student Portal Sign In" : "Create Free Account"}
+                <h2 className="mt-4 text-2xl font-bold text-white">
+                  Student Sign In
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
-                  {mode === "signin"
-                    ? "Enter your email to access the NMAI dashboard."
-                    : "Sign up free to browse the platform. Paid course access requires enrollment."}
+                  Enter your verified student Gmail address to access your courses.
                 </p>
               </div>
 
@@ -459,7 +417,7 @@ export default function StudentLoginPage() {
                   <div className="w-full border-t border-white/[0.08]" />
                 </div>
                 <span className="relative bg-[#080D17] px-3 text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                  Or enter your Gmail manually
+                  Or sign in with password
                 </span>
               </div>
 
@@ -472,7 +430,7 @@ export default function StudentLoginPage() {
                 >
                   <ShieldAlert size={18} className="text-rose-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-semibold text-rose-300">Login Rejected</p>
+                    <p className="font-semibold text-rose-300">Access Denied</p>
                     <p className="mt-0.5 leading-relaxed">{error}</p>
                   </div>
                 </motion.div>
@@ -492,22 +450,6 @@ export default function StudentLoginPage() {
 
               {/* FORM */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                {mode === "signup" && (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      Your Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Alex Rivers"
-                      required
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3.5 text-sm text-white placeholder-slate-600 transition-all duration-200 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:bg-white/[0.07] focus:outline-none"
-                    />
-                  </div>
-                )}
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                     Student Gmail Address
@@ -533,17 +475,15 @@ export default function StudentLoginPage() {
                     <label className="block text-xs font-semibold text-slate-300">
                       Password
                     </label>
-                    {mode === "signin" && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.94 }}
-                        onClick={() => alert("Password reset link will be sent to your verified Gmail.")}
-                        className="text-[11px] font-medium text-cyan-400 hover:text-cyan-300 hover:underline transition"
-                      >
-                        Forgot password?
-                      </motion.button>
-                    )}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.94 }}
+                      onClick={() => alert("Please contact the NMAI Administrator on WhatsApp to reset your password.")}
+                      className="text-[11px] font-medium text-cyan-400 hover:text-cyan-300 hover:underline transition"
+                    >
+                      Forgot password?
+                    </motion.button>
                   </div>
                   <div className="relative">
                     <Lock
@@ -602,11 +542,7 @@ export default function StudentLoginPage() {
                   </span>
 
                   <span className="relative z-10 flex items-center gap-2">
-                    {loading
-                      ? "Verifying Student Access..."
-                      : mode === "signin"
-                      ? "Verify & Open Platform"
-                      : "Enroll & Access Platform"}
+                    {loading ? "Verifying Student Enrollment..." : "Sign In & Open Platform"}
                     <ArrowRight size={16} />
                   </span>
                 </motion.button>
@@ -614,19 +550,17 @@ export default function StudentLoginPage() {
 
               <div className="mt-6 pt-4 border-t border-white/[0.06] text-center">
                 <p className="text-xs text-slate-500">
-                  {mode === "signin" ? "Need to enroll?" : "Already an enrolled student?"}{" "}
-                  <motion.button
-                    type="button"
+                  Not an enrolled student?{" "}
+                  <motion.a
+                    href="https://wa.me/919177187024?text=Hi%20NMAI%20Admin,%20I%20want%20to%20enroll%20in%20an%20NMAI%20course"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.94 }}
-                    onClick={() => {
-                      setMode(mode === "signin" ? "signup" : "signin");
-                      setError(null);
-                    }}
                     className="font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-4 transition"
                   >
-                    {mode === "signin" ? "Enroll with your Gmail" : "Sign in with your Gmail"}
-                  </motion.button>
+                    Request Enrollment on WhatsApp
+                  </motion.a>
                 </p>
               </div>
             </div>
@@ -694,68 +628,59 @@ export default function StudentLoginPage() {
               </div>
 
               <p className="text-xs text-slate-400 mb-4">
-                Choose an account to continue to <strong>NMAI Learning Platform</strong>:
+                Enter your enrolled Google / Gmail address to verify your student membership:
               </p>
 
-              {/* LIST OF ACCOUNTS TO CHOOSE WITH CLICK EFFECTS */}
-              <div className="space-y-2 mb-5">
-                {INITIAL_ENROLLED_STUDENTS.slice(0, 3).map((student) => (
-                  <motion.button
-                    key={student.email}
-                    type="button"
-                    whileHover={{ scale: 1.015, x: 3, backgroundColor: "rgba(255, 255, 255, 0.07)" }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleSelectGoogleAccount(student.email, student.name)}
-                    disabled={googleLoading}
-                    className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-cyan-400/40 transition text-left group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-blue-600/20 text-cyan-300 flex items-center justify-center font-bold text-xs border border-blue-500/30 group-hover:bg-cyan-500/20 transition">
-                        {student.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-white group-hover:text-cyan-300 transition">
-                          {student.name}
-                        </p>
-                        <p className="text-[11px] text-slate-500">{student.email}</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      Enrolled
-                    </span>
-                  </motion.button>
-                ))}
-              </div>
+              {googleError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/15 p-3 text-xs text-rose-200 flex items-start gap-2"
+                >
+                  <ShieldAlert size={16} className="text-rose-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-rose-300">Access Denied</p>
+                    <p className="mt-0.5 leading-relaxed">{googleError}</p>
+                  </div>
+                </motion.div>
+              )}
 
-              {/* TEST ANY OTHER GMAIL ADDRESS */}
-              <div className="border-t border-white/10 pt-4">
-                <p className="text-xs font-semibold text-slate-300 mb-2">
-                  Or enter another Google account:
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    value={customGoogleEmail}
-                    onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                    placeholder="other@gmail.com"
-                    className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                  />
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.94 }}
-                    onClick={() => {
-                      if (!customGoogleEmail.trim()) return;
-                      handleSelectGoogleAccount(customGoogleEmail, customGoogleEmail.split("@")[0]);
-                    }}
-                    disabled={googleLoading}
-                    className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-2 text-xs font-semibold text-white hover:brightness-110 transition shadow-md shadow-blue-500/20"
-                  >
-                    {googleLoading ? "Checking..." : "Verify"}
-                  </motion.button>
+              <form onSubmit={handleGoogleVerify} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Student Gmail Address
+                  </label>
+                  <div className="relative">
+                    <Mail
+                      size={16}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                    <input
+                      type="email"
+                      value={customGoogleEmail}
+                      onChange={(e) => setCustomGoogleEmail(e.target.value)}
+                      placeholder="student@gmail.com"
+                      required
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                    />
+                  </div>
                 </div>
-                <p className="mt-2 text-[10px] text-slate-500">
-                  Try entering an unauthorized Gmail (e.g. <code>stranger@gmail.com</code>) to test the rejection behavior!
+
+                <motion.button
+                  type="submit"
+                  disabled={googleLoading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-2.5 px-4 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:brightness-110 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {googleLoading ? "Verifying Student Enrollment..." : "Verify & Open Student Portal"}
+                  <ArrowRight size={14} />
+                </motion.button>
+              </form>
+
+              <div className="mt-4 pt-3 border-t border-white/10 text-center">
+                <p className="text-[11px] text-slate-500">
+                  Only Gmail addresses pre-authorized by NMAI administrators are permitted.
                 </p>
               </div>
             </motion.div>
@@ -766,16 +691,6 @@ export default function StudentLoginPage() {
       {/* FOOTER */}
       <footer className="relative z-10 py-6 border-t border-white/[0.06] text-center text-xs text-slate-600 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
         <p>&copy; {new Date().getFullYear()} NMAI Learning Platform. Verified Enrolled Student Access Only.</p>
-        <span className="hidden sm:inline text-slate-700">•</span>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-cyan-400 transition"
-          >
-            <Shield size={12} />
-            <span>Admin Master Portal</span>
-          </Link>
-        </motion.div>
       </footer>
     </div>
   );
