@@ -19,10 +19,14 @@ import {
   Zap,
   Eye,
   EyeOff,
+  User,
   X,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
-import { checkStudentAuthorization } from "../data/enrolledStudents";
+import {
+  registerOrGetStudent,
+  checkStudentAuthorization,
+} from "../data/enrolledStudents";
 import { playClickSound, preloadClickSound } from "../utils/sound";
 
 interface RippleEffect {
@@ -35,8 +39,10 @@ interface RippleEffect {
 
 export default function StudentLoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [gmail, setGmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,20 +75,9 @@ export default function StudentLoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
-  // Strict verification: only pre-authorized enrolled students allowed!
+  // Authenticate student: registers new free users (0 courses) or logs in existing students
   const authenticateStudent = (targetEmail: string, studentName?: string) => {
-    const auth = checkStudentAuthorization(targetEmail);
-
-    if (!auth.authorized || !auth.student) {
-      const msg = `⛔ Access Denied: "${targetEmail}" is not an enrolled student. NMAI access is strictly restricted to registered students. Please contact support on WhatsApp to purchase enrollment.`;
-      setError(msg);
-      setGoogleError(msg);
-      setLoading(false);
-      setGoogleLoading(false);
-      return false;
-    }
-
-    const student = auth.student;
+    const student = registerOrGetStudent(targetEmail, studentName);
 
     if (student.status === "suspended") {
       const msg = `⛔ Access Suspended: Account for "${targetEmail}" has been suspended by the administrator. Please contact support.`;
@@ -94,7 +89,7 @@ export default function StudentLoginPage() {
       return false;
     }
 
-    // Email is authorized! Create verified session
+    // Create session
     const session = {
       verified: true,
       email: student.email,
@@ -108,8 +103,11 @@ export default function StudentLoginPage() {
     localStorage.setItem("nmai-student-session", JSON.stringify(session));
     localStorage.setItem("nmai-student-user", JSON.stringify(session));
 
+    const hasPaidCourses = Array.isArray(student.enrolledCourses) && student.enrolledCourses.length > 0;
     setSuccessMsg(
-      `Welcome back, ${session.name}! Enrolled student access verified. Redirecting to NMAI...`
+      hasPaidCourses
+        ? `Welcome back, ${session.name}! Enrolled access verified. Redirecting to NMAI...`
+        : `Welcome, ${session.name}! Free membership created. Entering NMAI portal...`
     );
     setShowGoogleModal(false);
 
@@ -147,7 +145,7 @@ export default function StudentLoginPage() {
     setGoogleLoading(true);
 
     setTimeout(() => {
-      authenticateStudent(customGoogleEmail);
+      authenticateStudent(customGoogleEmail, customGoogleEmail.split("@")[0]);
     }, 600);
   };
 
@@ -159,7 +157,7 @@ export default function StudentLoginPage() {
     setSuccessMsg(null);
 
     if (!gmail.trim()) {
-      setError("Please enter your enrolled student Gmail address.");
+      setError("Please enter your Gmail / email address.");
       return;
     }
 
@@ -169,14 +167,14 @@ export default function StudentLoginPage() {
     }
 
     if (password.length < 4) {
-      setError("Please enter your student password.");
+      setError("Please enter a password with at least 4 characters.");
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      authenticateStudent(gmail);
+      authenticateStudent(gmail, name || gmail.split("@")[0]);
     }, 700);
   };
 
@@ -235,7 +233,7 @@ export default function StudentLoginPage() {
       {/* MAIN CONTAINER */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-5xl grid lg:grid-cols-12 gap-8 items-center">
-          {/* LEFT COLUMN: SECURITY & BRAND HIGHLIGHTS */}
+          {/* LEFT COLUMN: BRAND & VALUE PROPOSITION */}
           <motion.div
             initial={{ opacity: 0, x: -25 }}
             animate={{ opacity: 1, x: 0 }}
@@ -259,28 +257,33 @@ export default function StudentLoginPage() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/[0.06] px-3.5 py-1.5 text-xs font-semibold text-cyan-300 w-fit cursor-default shadow-sm hover:border-cyan-400/40 transition-colors"
             >
               <ShieldCheck size={14} className="text-cyan-400" />
-              Verified Enrolled Student Access Only
+              Open Portal Access • Free Signup
             </motion.div>
 
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-white xl:text-5xl leading-tight">
-              Direct Sales & AI{" "}
+              Sign up free to explore{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Learning Platform.
+                NMAI courses & platform.
               </span>
             </h1>
 
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              NMAI provides specialized frameworks, training playbooks, and automated AI mentors for direct sales leaders. Platform access is strictly restricted to verified enrolled students.
+              Anyone can sign up and enter the portal! Course lessons, video training, and the <strong>NMAI Sales Objection Mentor</strong> Gem are paid premium features unlocked upon administrator approval. Free access to course content is not available.
             </p>
 
-            {/* VALUE PROPOSITION CARDS */}
+            {/* VALUE PROPOSITION CARDS (EXPLAINING LOCKED COURSES) */}
             <div className="mt-7 space-y-3">
               <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 backdrop-blur-sm">
                 <div className="h-9 w-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-cyan-400 shrink-0 mt-0.5">
                   <GraduationCap size={18} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">Network Marketing Mastery</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold text-white">Network Marketing Mastery</p>
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                      Paid • Locked
+                    </span>
+                  </div>
                   <p className="text-[11px] text-slate-400 mt-0.5">Objection handling, team building, leadership models, and prospect closing frameworks.</p>
                 </div>
               </div>
@@ -290,30 +293,40 @@ export default function StudentLoginPage() {
                   <Bot size={18} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">NMAI Sales Objection Mentor</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold text-white">NMAI Sales Objection Mentor</p>
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                      Paid • Enrolled Only
+                    </span>
+                  </div>
                   <p className="text-[11px] text-slate-400 mt-0.5">Exclusive custom Gemini AI trained specifically to handle direct sales objections in real time.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 backdrop-blur-sm">
                 <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
-                  <ShieldCheck size={18} />
+                  <Lock size={18} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">Protected Student Area</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Only accounts pre-authorized by NMAI administrators are granted access credentials.</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold text-white">Zero Free Course Content</p>
+                    <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-bold text-cyan-300">
+                      Strict Protection
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Free membership gives portal access to browse and test UI. Training materials unlock only after purchase.</p>
                 </div>
               </div>
             </div>
 
-            {/* NOT ENROLLED CTA */}
+            {/* PURCHASE ENROLLMENT CTA */}
             <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                  <span>🔒</span> Need Course Access?
+                  <span>🔒</span> Want to Purchase Course Access?
                 </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Courses are strictly paid. Reach out on WhatsApp to purchase enrollment.
+                  Contact the Administrator on WhatsApp to purchase and unlock courses.
                 </p>
               </div>
               <motion.a
@@ -325,7 +338,7 @@ export default function StudentLoginPage() {
                 className="shrink-0 flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white transition shadow-md shadow-emerald-500/20"
               >
                 <MessageCircle size={14} />
-                <span>Enroll on WhatsApp</span>
+                <span>Contact Admin</span>
               </motion.a>
             </div>
           </motion.div>
@@ -349,11 +362,63 @@ export default function StudentLoginPage() {
                     />
                   </Link>
                 </motion.div>
-                <h2 className="mt-4 text-2xl font-bold text-white">
-                  Student Sign In
+              </div>
+
+              {/* TABS WITH SMOOTH SLIDING PILL */}
+              <div className="relative flex items-center rounded-2xl bg-white/[0.04] p-1.5 border border-white/[0.08] mb-6">
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    playClickSound();
+                    setMode("signin");
+                    setError(null);
+                  }}
+                  className={`relative flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors duration-200 z-10 ${
+                    mode === "signin" ? "text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {mode === "signin" && (
+                    <motion.div
+                      layoutId="activeTabBadge"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 shadow-md"
+                      transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                    />
+                  )}
+                  <span className="relative z-10">Sign In</span>
+                </motion.button>
+
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    playClickSound();
+                    setMode("signup");
+                    setError(null);
+                  }}
+                  className={`relative flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors duration-200 z-10 ${
+                    mode === "signup" ? "text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {mode === "signup" && (
+                    <motion.div
+                      layoutId="activeTabBadge"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 shadow-md"
+                      transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                    />
+                  )}
+                  <span className="relative z-10">Free Signup</span>
+                </motion.button>
+              </div>
+
+              <div className="mb-6 text-center">
+                <h2 className="text-2xl font-bold text-white">
+                  {mode === "signin" ? "Portal Sign In" : "Create Free Account"}
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
-                  Enter your verified student Gmail address to access your courses.
+                  {mode === "signin"
+                    ? "Enter your email to access the NMAI dashboard."
+                    : "Sign up free to explore the portal. All course training is paid & locked."}
                 </p>
               </div>
 
@@ -417,7 +482,7 @@ export default function StudentLoginPage() {
                   <div className="w-full border-t border-white/[0.08]" />
                 </div>
                 <span className="relative bg-[#080D17] px-3 text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                  Or sign in with password
+                  {mode === "signin" ? "Or enter your email" : "Or sign up with email"}
                 </span>
               </div>
 
@@ -430,7 +495,7 @@ export default function StudentLoginPage() {
                 >
                   <ShieldAlert size={18} className="text-rose-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-semibold text-rose-300">Access Denied</p>
+                    <p className="font-semibold text-rose-300">Login Notice</p>
                     <p className="mt-0.5 leading-relaxed">{error}</p>
                   </div>
                 </motion.div>
@@ -450,9 +515,31 @@ export default function StudentLoginPage() {
 
               {/* FORM */}
               <form onSubmit={handleSubmit} className="space-y-4">
+                {mode === "signup" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Your Full Name
+                    </label>
+                    <div className="relative">
+                      <User
+                        size={17}
+                        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+                      />
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="e.g. Alex Rivers"
+                        required
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3.5 text-sm text-white placeholder-slate-600 transition-all duration-200 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:bg-white/[0.07] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Student Gmail Address
+                    Your Gmail / Email Address
                   </label>
                   <div className="relative">
                     <Mail
@@ -463,7 +550,7 @@ export default function StudentLoginPage() {
                       type="email"
                       value={gmail}
                       onChange={(e) => setGmail(e.target.value)}
-                      placeholder="student@gmail.com"
+                      placeholder="yourname@gmail.com"
                       required
                       className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3.5 text-sm text-white placeholder-slate-600 transition-all duration-200 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:bg-white/[0.07] focus:outline-none"
                     />
@@ -475,15 +562,17 @@ export default function StudentLoginPage() {
                     <label className="block text-xs font-semibold text-slate-300">
                       Password
                     </label>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.94 }}
-                      onClick={() => alert("Please contact the NMAI Administrator on WhatsApp to reset your password.")}
-                      className="text-[11px] font-medium text-cyan-400 hover:text-cyan-300 hover:underline transition"
-                    >
-                      Forgot password?
-                    </motion.button>
+                    {mode === "signin" && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => alert("Please contact the NMAI Administrator on WhatsApp to reset your password.")}
+                        className="text-[11px] font-medium text-cyan-400 hover:text-cyan-300 hover:underline transition"
+                      >
+                        Forgot password?
+                      </motion.button>
+                    )}
                   </div>
                   <div className="relative">
                     <Lock
@@ -542,7 +631,11 @@ export default function StudentLoginPage() {
                   </span>
 
                   <span className="relative z-10 flex items-center gap-2">
-                    {loading ? "Verifying Student Enrollment..." : "Sign In & Open Platform"}
+                    {loading
+                      ? "Verifying Access..."
+                      : mode === "signin"
+                      ? "Sign In & Open Platform"
+                      : "Create Free Account & Enter"}
                     <ArrowRight size={16} />
                   </span>
                 </motion.button>
@@ -550,17 +643,20 @@ export default function StudentLoginPage() {
 
               <div className="mt-6 pt-4 border-t border-white/[0.06] text-center">
                 <p className="text-xs text-slate-500">
-                  Not an enrolled student?{" "}
-                  <motion.a
-                    href="https://wa.me/919177187024?text=Hi%20NMAI%20Admin,%20I%20want%20to%20enroll%20in%20an%20NMAI%20course"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  {mode === "signin" ? "New to NMAI?" : "Already have an account?"}{" "}
+                  <motion.button
+                    type="button"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.94 }}
+                    onClick={() => {
+                      playClickSound();
+                      setMode(mode === "signin" ? "signup" : "signin");
+                      setError(null);
+                    }}
                     className="font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-4 transition"
                   >
-                    Request Enrollment on WhatsApp
-                  </motion.a>
+                    {mode === "signin" ? "Sign up free to explore" : "Sign in here"}
+                  </motion.button>
                 </p>
               </div>
             </div>
@@ -613,7 +709,7 @@ export default function StudentLoginPage() {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                       />
                     </svg>
-                    <h3 className="text-sm font-bold text-white">Sign in with Google</h3>
+                    <h3 className="text-sm font-bold text-white">Continue with Google</h3>
                   </div>
                 </div>
                 <motion.button
@@ -628,7 +724,7 @@ export default function StudentLoginPage() {
               </div>
 
               <p className="text-xs text-slate-400 mb-4">
-                Enter your enrolled Google / Gmail address to verify your student membership:
+                Enter your Google / Gmail address to sign in or create your free account:
               </p>
 
               {googleError && (
@@ -639,7 +735,7 @@ export default function StudentLoginPage() {
                 >
                   <ShieldAlert size={16} className="text-rose-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-semibold text-rose-300">Access Denied</p>
+                    <p className="font-semibold text-rose-300">Notice</p>
                     <p className="mt-0.5 leading-relaxed">{googleError}</p>
                   </div>
                 </motion.div>
@@ -648,7 +744,7 @@ export default function StudentLoginPage() {
               <form onSubmit={handleGoogleVerify} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Student Gmail Address
+                    Your Gmail Address
                   </label>
                   <div className="relative">
                     <Mail
@@ -659,7 +755,7 @@ export default function StudentLoginPage() {
                       type="email"
                       value={customGoogleEmail}
                       onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                      placeholder="student@gmail.com"
+                      placeholder="yourname@gmail.com"
                       required
                       className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                     />
@@ -673,14 +769,14 @@ export default function StudentLoginPage() {
                   whileTap={{ scale: 0.98 }}
                   className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-2.5 px-4 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:brightness-110 transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {googleLoading ? "Verifying Student Enrollment..." : "Verify & Open Student Portal"}
+                  {googleLoading ? "Connecting..." : "Continue & Open Platform"}
                   <ArrowRight size={14} />
                 </motion.button>
               </form>
 
               <div className="mt-4 pt-3 border-t border-white/10 text-center">
                 <p className="text-[11px] text-slate-500">
-                  Only Gmail addresses pre-authorized by NMAI administrators are permitted.
+                  New accounts receive free membership with course catalog access. Full video lessons unlock upon enrollment.
                 </p>
               </div>
             </motion.div>
@@ -690,7 +786,7 @@ export default function StudentLoginPage() {
 
       {/* FOOTER */}
       <footer className="relative z-10 py-6 border-t border-white/[0.06] text-center text-xs text-slate-600 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-        <p>&copy; {new Date().getFullYear()} NMAI Learning Platform. Verified Enrolled Student Access Only.</p>
+        <p>&copy; {new Date().getFullYear()} NMAI Learning Platform. All Rights Reserved.</p>
       </footer>
     </div>
   );
