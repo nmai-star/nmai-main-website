@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,18 +15,11 @@ import {
   MessageCircle,
   ShieldCheck,
   ShieldAlert,
-  Sparkles,
-  Zap,
   Eye,
   EyeOff,
   User,
-  X,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
-import {
-  registerOrGetStudent,
-  checkStudentAuthorization,
-} from "../data/enrolledStudents";
 import { playClickSound, preloadClickSound } from "../utils/sound";
 
 interface RippleEffect {
@@ -37,9 +30,11 @@ interface RippleEffect {
   buttonType: "google" | "submit";
 }
 
-export default function StudentLoginPage() {
-  const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+function StudentLoginForm() {
+  const searchParams = useSearchParams();
+  const notice = searchParams.get("notice");
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">(searchParams.get("mode") === "signin" ? "signin" : "signup");
   const [gmail, setGmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -69,113 +64,34 @@ export default function StudentLoginPage() {
     }, 600);
   };
 
-  // Google Modal State
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
 
-  // Authenticate student: registers new free users (0 courses) or logs in existing students
-  const authenticateStudent = (targetEmail: string, studentName?: string) => {
-    const student = registerOrGetStudent(targetEmail, studentName);
-
-    if (student.status === "suspended") {
-      const msg = `⛔ Access Suspended: Account for "${targetEmail}" has been suspended by the administrator. Please contact support.`;
-      setError(msg);
-      setGoogleError(msg);
-      setLoading(false);
-      setGoogleLoading(false);
-      setShowGoogleModal(false);
-      return false;
-    }
-
-    // Create session
-    const session = {
-      verified: true,
-      email: student.email,
-      name: student.name || studentName || student.email.split("@")[0],
-      enrolledCourse: student.enrolledCourse,
-      enrolledCourses: student.enrolledCourses || [],
-      loginTime: new Date().toISOString(),
-      provider: "google",
-    };
-
-    localStorage.setItem("nmai-student-session", JSON.stringify(session));
-    localStorage.setItem("nmai-student-user", JSON.stringify(session));
-
-    const hasPaidCourses = Array.isArray(student.enrolledCourses) && student.enrolledCourses.length > 0;
-    setSuccessMsg(
-      hasPaidCourses
-        ? `Welcome back, ${session.name}! Enrolled access verified. Redirecting to NMAI...`
-        : `Welcome, ${session.name}! Free membership created. Entering NMAI portal...`
-    );
-    setShowGoogleModal(false);
-
-    setTimeout(() => {
-      router.push("/");
-    }, 800);
-
-    return true;
-  };
-
-  // Google Sign-In button clicked
   const handleGoogleClick = () => {
+    setNoticeDismissed(true);
     playClickSound();
-    setError(null);
-    setGoogleError(null);
-    setShowGoogleModal(true);
-  };
-
-  // Google modal verification submit
-  const handleGoogleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    playClickSound();
-    setGoogleError(null);
-
-    if (!customGoogleEmail.trim()) {
-      setGoogleError("Please enter your Gmail address.");
-      return;
-    }
-
-    if (!customGoogleEmail.includes("@")) {
-      setGoogleError("Please enter a valid email address (e.g. yourname@gmail.com).");
-      return;
-    }
-
     setGoogleLoading(true);
-
-    setTimeout(() => {
-      authenticateStudent(customGoogleEmail, customGoogleEmail.split("@")[0]);
-    }, 600);
+    window.location.assign(`/api/auth/google?intent=${mode}`);
   };
 
-  // Form submit handler
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNoticeDismissed(true);
     playClickSound();
     setError(null);
     setSuccessMsg(null);
-
-    if (!gmail.trim()) {
-      setError("Please enter your Gmail / email address.");
-      return;
-    }
-
-    if (!gmail.toLowerCase().endsWith("@gmail.com") && !gmail.includes("@")) {
-      setError("Please enter a valid email address (e.g. yourname@gmail.com).");
-      return;
-    }
-
-    if (password.length < 4) {
-      setError("Please enter a password with at least 4 characters.");
-      return;
-    }
-
     setLoading(true);
+    try {
+      const response = await fetch(mode === "signin" ? "/api/auth/login" : "/api/auth/signup", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: gmail, password, name }),
+      });
+      const result = await response.json();
+      if (!response.ok) { setError(result.message || "Details not found."); return; }
 
-    setTimeout(() => {
-      authenticateStudent(gmail, name || gmail.split("@")[0]);
-    }, 700);
+      // Only a server-issued session can open the portal.
+      window.location.assign("/");
+    } catch { setError("Unable to connect. Please try again."); }
+    finally { setLoading(false); }
   };
 
   // Delegated click capture to ensure all buttons and links trigger click sound
@@ -257,18 +173,18 @@ export default function StudentLoginPage() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/[0.06] px-3.5 py-1.5 text-xs font-semibold text-cyan-300 w-fit cursor-default shadow-sm hover:border-cyan-400/40 transition-colors"
             >
               <ShieldCheck size={14} className="text-cyan-400" />
-              Open Portal Access • Free Signup
+              Free Portal Signup • Courses Locked
             </motion.div>
 
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-white xl:text-5xl leading-tight">
-              Sign up free to explore{" "}
+              Request access to{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
                 NMAI courses & platform.
               </span>
             </h1>
 
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              Anyone can sign up and enter the portal! Course lessons, video training, and the <strong>NMAI Sales Objection Mentor</strong> Gem are paid premium features unlocked upon administrator approval. Free access to course content is not available.
+              Sign in with Google or submit an account request. You can enter the portal after signup. Only the administrator can unlock courses for your account. Course lessons, video training, and the <strong>NMAI Sales Objection Mentor</strong> Gem are paid premium features unlocked upon administrator approval. Free access to course content is not available.
             </p>
 
             {/* VALUE PROPOSITION CARDS (EXPLAINING LOCKED COURSES) */}
@@ -314,7 +230,7 @@ export default function StudentLoginPage() {
                       Strict Protection
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Free membership gives portal access to browse and test UI. Training materials unlock only after purchase.</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">New accounts can browse the portal. All course lessons stay locked until the administrator grants access.</p>
                 </div>
               </div>
             </div>
@@ -407,18 +323,18 @@ export default function StudentLoginPage() {
                       transition={{ type: "spring", stiffness: 450, damping: 35 }}
                     />
                   )}
-                  <span className="relative z-10">Free Signup</span>
+                  <span className="relative z-10">Sign Up</span>
                 </motion.button>
               </div>
 
               <div className="mb-6 text-center">
                 <h2 className="text-2xl font-bold text-white">
-                  {mode === "signin" ? "Portal Sign In" : "Create Free Account"}
+                  {mode === "signin" ? "Welcome Back" : "Create Your NMAI Account"}
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
                   {mode === "signin"
-                    ? "Enter your email to access the NMAI dashboard."
-                    : "Sign up free to explore the portal. All course training is paid & locked."}
+                    ? "Sign in with your registered account and NMAI password."
+                    : "Create your account to explore the portal. Course access is granted by the administrator."}
                 </p>
               </div>
 
@@ -474,7 +390,7 @@ export default function StudentLoginPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span>Continue with Google (Gmail)</span>
+                <span>{mode === "signup" ? "Sign up with Gmail" : "Login with Gmail"}</span>
               </motion.button>
 
               <div className="relative my-6 text-center">
@@ -487,7 +403,7 @@ export default function StudentLoginPage() {
               </div>
 
               {/* ERROR ALERT */}
-              {error && (
+              {(error || (!noticeDismissed && notice)) && (
                 <motion.div
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -496,7 +412,7 @@ export default function StudentLoginPage() {
                   <ShieldAlert size={18} className="text-rose-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-semibold text-rose-300">Login Notice</p>
-                    <p className="mt-0.5 leading-relaxed">{error}</p>
+                    <p className="mt-0.5 leading-relaxed">{error || notice}</p>
                   </div>
                 </motion.div>
               )}
@@ -560,14 +476,14 @@ export default function StudentLoginPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold text-slate-300">
-                      Password
+                      NMAI Password
                     </label>
                     {mode === "signin" && (
                       <motion.button
                         type="button"
                         whileHover={{ scale: 1.04 }}
                         whileTap={{ scale: 0.94 }}
-                        onClick={() => alert("Please contact the NMAI Administrator on WhatsApp to reset your password.")}
+                        onClick={() => alert("Use Continue with Google for your Google account, or contact the administrator for help with your NMAI account. Never enter your Gmail password here.")}
                         className="text-[11px] font-medium text-cyan-400 hover:text-cyan-300 hover:underline transition"
                       >
                         Forgot password?
@@ -581,6 +497,9 @@ export default function StudentLoginPage() {
                     />
                     <input
                       type={showPassword ? "text" : "password"}
+                      autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                      minLength={mode === "signup" ? 8 : undefined}
+                      maxLength={256}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
@@ -635,7 +554,7 @@ export default function StudentLoginPage() {
                       ? "Verifying Access..."
                       : mode === "signin"
                       ? "Sign In & Open Platform"
-                      : "Create Free Account & Enter"}
+                      : "Sign Up & Open Portal"}
                     <ArrowRight size={16} />
                   </span>
                 </motion.button>
@@ -655,7 +574,7 @@ export default function StudentLoginPage() {
                     }}
                     className="font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-4 transition"
                   >
-                    {mode === "signin" ? "Sign up free to explore" : "Sign in here"}
+                    {mode === "signin" ? "Request access" : "Sign in here"}
                   </motion.button>
                 </p>
               </div>
@@ -664,130 +583,14 @@ export default function StudentLoginPage() {
         </div>
       </main>
 
-      {/* GOOGLE ACCOUNT SELECTOR MODAL WITH ANIMATIONS */}
-      <AnimatePresence>
-        {showGoogleModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !googleLoading && setShowGoogleModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#080D17] p-6 shadow-2xl z-10"
-            >
-              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/nmai-logo.png"
-                    alt="NMAI"
-                    className="h-7 w-auto object-contain"
-                  />
-                  <div className="h-4 w-px bg-white/15" />
-                  <div className="flex items-center gap-2">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      />
-                    </svg>
-                    <h3 className="text-sm font-bold text-white">Continue with Google</h3>
-                  </div>
-                </div>
-                <motion.button
-                  type="button"
-                  whileHover={{ rotate: 90 }}
-                  whileTap={{ scale: 0.85 }}
-                  onClick={() => setShowGoogleModal(false)}
-                  className="rounded-xl p-1.5 text-slate-400 hover:bg-white/[0.08] hover:text-white transition"
-                >
-                  <X size={16} />
-                </motion.button>
-              </div>
-
-              <p className="text-xs text-slate-400 mb-4">
-                Enter your Google / Gmail address to sign in or create your free account:
-              </p>
-
-              {googleError && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/15 p-3 text-xs text-rose-200 flex items-start gap-2"
-                >
-                  <ShieldAlert size={16} className="text-rose-400 shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="font-semibold text-rose-300">Notice</p>
-                    <p className="mt-0.5 leading-relaxed">{googleError}</p>
-                  </div>
-                </motion.div>
-              )}
-
-              <form onSubmit={handleGoogleVerify} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Your Gmail Address
-                  </label>
-                  <div className="relative">
-                    <Mail
-                      size={16}
-                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-                    />
-                    <input
-                      type="email"
-                      value={customGoogleEmail}
-                      onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                      placeholder="yourname@gmail.com"
-                      required
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <motion.button
-                  type="submit"
-                  disabled={googleLoading}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-2.5 px-4 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:brightness-110 transition disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {googleLoading ? "Connecting..." : "Continue & Open Platform"}
-                  <ArrowRight size={14} />
-                </motion.button>
-              </form>
-
-              <div className="mt-4 pt-3 border-t border-white/10 text-center">
-                <p className="text-[11px] text-slate-500">
-                  New accounts receive free membership with course catalog access. Full video lessons unlock upon enrollment.
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* FOOTER */}
       <footer className="relative z-10 py-6 border-t border-white/[0.06] text-center text-xs text-slate-600 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
         <p>&copy; {new Date().getFullYear()} NMAI Learning Platform. All Rights Reserved.</p>
       </footer>
     </div>
   );
+}
+
+export default function StudentLoginPage() {
+  return <Suspense fallback={<div className="min-h-screen bg-[#05070D]" />}><StudentLoginForm /></Suspense>;
 }

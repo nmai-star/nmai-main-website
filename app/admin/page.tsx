@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Shield,
   ShieldCheck,
@@ -41,13 +40,15 @@ import {
   EyeOff,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
+import AccessRequests from "../components/AccessRequests";
+import { removeAccount } from "../utils/removeAccount";
+import CourseManager from "../components/CourseManager";
 import {
   getAllStudents,
   saveAllStudents,
   addEnrolledStudent,
   updateStudent,
   toggleStudentStatus,
-  deleteStudent,
   bulkAddStudents,
   resetStudentsToDefault,
   updateStudentCourseAccess,
@@ -57,7 +58,6 @@ import {
 import {
   getWebsiteConfig,
   saveWebsiteConfig,
-  verifyAdminPasskey,
   WebsiteConfig,
 } from "../data/websiteConfig";
 import {
@@ -81,12 +81,10 @@ import {
 type AdminTab = "students" | "courses" | "tools" | "settings";
 
 export default function AdminPortalPage() {
-  const router = useRouter();
 
   // Admin Auth State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   const [passkeyInput, setPasskeyInput] = useState<string>("");
-  const [showSettingsPasskey, setShowSettingsPasskey] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string>("");
   const [activeTab, setActiveTab] = useState<AdminTab>("students");
   const [toastMessage, setToastMessage] = useState<string>("");
@@ -132,18 +130,14 @@ export default function AdminPortalPage() {
   const [newToolBestFor, setNewToolBestFor] = useState<string>("");
   const [newToolWorkflow, setNewToolWorkflow] = useState<string>("");
 
-  // Check existing admin session on mount
   useEffect(() => {
-    try {
-      const sessionRaw = localStorage.getItem("nmai-admin-session");
-      if (sessionRaw) {
-        const parsed = JSON.parse(sessionRaw);
-        if (parsed && parsed.authorized === true) {
-          setIsAdminAuthenticated(true);
-        }
-      }
-    } catch {}
+    fetch("/api/auth/admin/session", { cache: "no-store" }).then(response => {
+      setIsAdminAuthenticated(response.ok);
+    }).catch(() => setIsAdminAuthenticated(false));
     loadAllData();
+    const refreshAccounts = () => setStudents(getAllStudents());
+    window.addEventListener("nmai-accounts-updated", refreshAccounts);
+    return () => window.removeEventListener("nmai-accounts-updated", refreshAccounts);
   }, []);
 
   const showToast = (msg: string) => {
@@ -158,36 +152,25 @@ export default function AdminPortalPage() {
     setConfig(getWebsiteConfig());
   };
 
-  // Handle Admin Login
-  const handleAdminLogin = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleAdminLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setAuthError("");
-
-    if (!passkeyInput.trim()) {
-      setAuthError("Please enter the Admin Master Passkey.");
-      return;
-    }
-
-    if (verifyAdminPasskey(passkeyInput)) {
-      const session = {
-        authorized: true,
-        role: "super-admin",
-        loginTime: new Date().toISOString(),
-      };
-      localStorage.setItem("nmai-admin-session", JSON.stringify(session));
+    try {
+      const response = await fetch("/api/auth/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passkey: passkeyInput }) });
+      const result = await response.json();
+      if (!response.ok) { setAuthError(result.message); return; }
       setIsAdminAuthenticated(true);
+      setPasskeyInput("");
       loadAllData();
-      showToast("Welcome to NMAI Admin Portal! Full administrative access unlocked.");
-    } else {
-      setAuthError("Incorrect Admin Master Passkey. Access is strictly restricted to the site owner.");
-    }
+    } catch { setAuthError("Unable to connect. Please try again."); }
   };
-
-  const handleAdminLogout = () => {
-    localStorage.removeItem("nmai-admin-session");
-    setIsAdminAuthenticated(false);
-    setPasskeyInput("");
-    showToast("Admin session ended. Portal locked.");
+  const handleAdminLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/admin/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      if (!response.ok) throw new Error("Sign out failed");
+      localStorage.removeItem("nmai-admin-session");
+      setIsAdminAuthenticated(false);
+    } catch { showToast("Sign out failed. Please try again."); }
   };
 
   // ================= STUDENT ACTIONS =================
@@ -292,12 +275,13 @@ export default function AdminPortalPage() {
     }
   };
 
-  const handleDeleteStudent = (id: string, email: string) => {
-    if (window.confirm(`Are you sure you want to permanently revoke access for "${email}"? They will no longer be able to open the student portal.`)) {
-      deleteStudent(id);
+  const handleDeleteStudent = async (id: string, email: string) => {
+    if (!window.confirm(`Delete "${email}" and all their login sessions? This cannot be undone. A new signup starts with no courses.`)) return;
+    try {
+      await removeAccount(id, email);
       setStudents(getAllStudents());
-      showToast(`Access revoked and removed for ${email}.`);
-    }
+      showToast(`Account deleted: ${email}.`);
+    } catch (error) { showToast(error instanceof Error ? error.message : "Unable to delete account."); }
   };
 
   const handleSaveEditedStudent = (e: React.FormEvent) => {
@@ -701,6 +685,9 @@ export default function AdminPortalPage() {
         ========================================================= */}
         {activeTab === "students" && (
           <div className="space-y-6">
+            <AccessRequests />
+            <details className="rounded-xl border border-white/10 p-4">
+              <summary className="cursor-pointer text-sm text-slate-400">Legacy browser records (do not grant portal access)</summary>
             {/* Header & Controls */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -934,95 +921,14 @@ export default function AdminPortalPage() {
                 </table>
               </div>
             </div>
+            </details>
           </div>
         )}
 
         {/* =========================================================
             TAB 2: COURSE & CURRICULUM MANAGER
         ========================================================= */}
-        {activeTab === "courses" && (
-          <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <BookOpen className="text-cyan-400" size={22} />
-                  Course & Curriculum Management
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Manage the courses visible on the main page, toggle active status, and modify lesson counts.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setShowAddCourseModal(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-cyan-500/20 hover:brightness-110"
-              >
-                <Plus size={15} />
-                <span>Add New Course</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {courses.map((c) => (
-                <div
-                  key={c.id}
-                  className="relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#080E1C] p-5 shadow-lg transition hover:border-cyan-400/30"
-                >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
-                        {c.category}
-                      </span>
-                      <button
-                        onClick={() => handleToggleCourse(c.id, c.title)}
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase transition ${
-                          c.available
-                            ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                            : "border border-amber-500/30 bg-amber-500/10 text-amber-300"
-                        }`}
-                      >
-                        {c.available ? "Live" : "Coming Soon"}
-                      </button>
-                    </div>
-
-                    <h3 className="mt-3 text-base font-bold text-white">{c.title}</h3>
-                    <p className="mt-1.5 text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {c.description}
-                    </p>
-
-                    <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
-                      <span>{c.lessons} Lessons</span>
-                      <span>•</span>
-                      <span>{c.duration}</span>
-                      <span>•</span>
-                      <span className="font-mono text-[11px] text-cyan-400 truncate max-w-[120px]">
-                        {c.href}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 flex items-center justify-between border-t border-white/[0.06] pt-4">
-                    <button
-                      onClick={() => setEditingCourse(c)}
-                      className="flex items-center gap-1 text-xs font-semibold text-cyan-300 hover:text-cyan-200"
-                    >
-                      <Edit3 size={13} />
-                      Edit Details
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteCourse(c.id, c.title)}
-                      className="flex items-center gap-1 text-xs font-semibold text-rose-400 hover:text-rose-300"
-                    >
-                      <Trash2 size={13} />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {activeTab === "courses" && <div className="space-y-8"><CourseManager /><AccessRequests /></div>}
 
         {/* =========================================================
             TAB 3: AI TOOLS & GEMINI GEMS DIRECTORY
@@ -1226,38 +1132,7 @@ export default function AdminPortalPage() {
                 </div>
               </div>
 
-              {/* Admin Master Key */}
-              <div className="rounded-2xl border border-white/[0.08] bg-[#080E1C] p-5">
-                <div className="flex items-center gap-2">
-                  <KeyRound className="text-amber-400" size={18} />
-                  <h3 className="text-sm font-bold text-white">Admin Master Passkey</h3>
-                </div>
-                <p className="mt-1 text-xs text-slate-400">
-                  The password required to unlock this admin portal.
-                </p>
-                <div className="relative mt-3">
-                  <input
-                    type={showSettingsPasskey ? "text" : "password"}
-                    value={config.adminPasskey}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        adminPasskey: e.target.value,
-                      })
-                    }
-                    placeholder="Enter master passkey"
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] pl-3 pr-10 text-xs font-mono text-cyan-300 outline-none focus:border-cyan-400/50"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSettingsPasskey(!showSettingsPasskey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
-                    title={showSettingsPasskey ? "Hide passkey" : "Show passkey"}
-                  >
-                    {showSettingsPasskey ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
+              <p className="text-xs text-slate-400">Admin authentication is managed securely on the server. Browser settings cannot change the admin passkey.</p>
 
               <button
                 type="submit"

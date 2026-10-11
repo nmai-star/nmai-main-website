@@ -28,7 +28,7 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
     whatsappUrl: "https://chat.whatsapp.com/CjZKNudezQp46MRqsUOTBR",
   },
   maintenanceMode: false,
-  adminPasskey: "Kk@9177187024",
+  adminPasskey: "",
   adminEmail: "kranthi@gmail.com",
   adminWhatsappNumber: "919177187024",
 };
@@ -73,17 +73,6 @@ export function saveWebsiteConfig(config: WebsiteConfig): void {
   }
 }
 
-export function verifyAdminPasskey(inputKey: string): boolean {
-  const config = getWebsiteConfig();
-  const trimmed = inputKey.trim();
-  // Master fallback keys always guaranteed for the site owner
-  return (
-    trimmed === config.adminPasskey ||
-    trimmed === "Kk@9177187024" ||
-    trimmed === "nmai-admin-2026" ||
-    trimmed === "kranthi2026"
-  );
-}
 
 /**
  * Returns a direct 1-on-1 WhatsApp link to the Admin for course purchasing & access requests.

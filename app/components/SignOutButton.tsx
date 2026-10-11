@@ -1,17 +1,17 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { playClickSound } from "../utils/sound";
 
 export default function SignOutButton({ className = "" }: { className?: string }) {
-  const router = useRouter();
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    const response = await fetch("/api/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    if (!response.ok) { alert("Sign out failed. Please try again."); return; }
     playClickSound();
     localStorage.removeItem("nmai-student-session");
     localStorage.removeItem("nmai-student-user");
-    router.replace("/login");
+    window.location.assign("/login");
   };
 
   return (

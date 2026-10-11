@@ -123,42 +123,22 @@ function normalizeStudent(s: any): EnrolledStudent {
 }
 
 /**
- * Retrieves all students from master localStorage storage, initializing with defaults if empty.
+ * Retrieves all students from master localStorage storage, preserving an intentionally empty list.
  */
 export function getAllStudents(): EnrolledStudent[] {
-  if (typeof window === "undefined") {
-    return INITIAL_ENROLLED_STUDENTS;
-  }
-
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(MASTER_STORAGE_KEY);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map(normalizeStudent);
-      }
+      return Array.isArray(parsed) ? parsed.map(normalizeStudent) : [];
     }
-    // Migrate legacy custom students if any
-    const legacyRaw = localStorage.getItem("nmai-enrolled-students");
-    let initialList = [...INITIAL_ENROLLED_STUDENTS];
-    if (legacyRaw) {
-      try {
-        const legacyParsed = JSON.parse(legacyRaw);
-        if (Array.isArray(legacyParsed)) {
-          for (const s of legacyParsed) {
-            if (!initialList.some((existing) => existing.email.toLowerCase() === s.email.toLowerCase())) {
-              initialList.push(normalizeStudent(s));
-            }
-          }
-        }
-      } catch {}
-    }
-
-    localStorage.setItem(MASTER_STORAGE_KEY, JSON.stringify(initialList));
-    return initialList;
+    // No automatic demo seeding or old-cache migration. The server owns accounts.
+    localStorage.setItem(MASTER_STORAGE_KEY, "[]");
+    return [];
   } catch (e) {
     console.error("Error retrieving enrolled students:", e);
-    return INITIAL_ENROLLED_STUDENTS;
+    return [];
   }
 }
 

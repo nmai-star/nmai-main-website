@@ -11,31 +11,53 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // The login page and admin portal have their own independent auth gates
-    if (pathname === "/login" || pathname.startsWith("/admin")) {
-      setIsAuthenticated(true);
+    if (pathname === "/" || pathname === "/login" || pathname.startsWith("/admin")) {
       return;
     }
 
-    try {
-      const sessionRaw = localStorage.getItem("nmai-student-session");
-      if (sessionRaw) {
-        const session = JSON.parse(sessionRaw);
-        if (session && session.verified === true && session.email) {
-          setIsAuthenticated(true);
-          return;
-        }
+    let cancelled = false;
+    const verify = async () => {
+      try {
+        const response = await fetch("/api/auth/session", { cache: "no-store" });
+        if (!response.ok) throw new Error("Access denied");
+        const { account } = await response.json();
+        const catalogResponse = await fetch("/api/auth/courses", { cache: "no-store" });
+        if (!catalogResponse.ok) throw new Error("Unable to load courses");
+        const catalog = await catalogResponse.json();
+        if (cancelled) return;
+        localStorage.setItem("nmai-courses-data", JSON.stringify(catalog.courses));
+        const student = {
+          id: account.id, email: account.email, name: account.name,
+          status: "active", enrolledCourses: account.courses,
+          enrolledCourse: account.courses.length ? account.courses.join(", ") : "No Courses Assigned",
+          enrollmentDate: account.createdAt.split("T")[0],
+        };
+        let previous = [];
+        try { previous = JSON.parse(localStorage.getItem("nmai-students-master") || "[]"); } catch {}
+        const others = Array.isArray(previous) ? previous.filter((s: { email: string }) => s.email !== account.email) : [];
+        const previousStudent = Array.isArray(previous) ? previous.find((s: { email: string }) => s.email === account.email) : {};
+        localStorage.setItem("nmai-students-master", JSON.stringify([...others, { ...previousStudent, ...student }]));
+        const session = { ...student, verified: true };
+        localStorage.setItem("nmai-student-session", JSON.stringify(session));
+        localStorage.setItem("nmai-student-user", JSON.stringify(session));
+        window.dispatchEvent(new Event("storage"));
+        setIsAuthenticated(true);
+      } catch {
+        if (cancelled) return;
+        localStorage.removeItem("nmai-student-session");
+        localStorage.removeItem("nmai-student-user");
+        setIsAuthenticated(false);
+        router.replace("/login");
       }
-    } catch (e) {
-      console.error("Failed to read student session:", e);
-    }
-
-    // Not authenticated -> redirect to login
-    setIsAuthenticated(false);
-    router.replace("/login");
+    };
+    void verify();
+    const timer = window.setInterval(verify, 30000);
+    window.addEventListener("focus", verify);
+    return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", verify); };
   }, [pathname, router]);
 
   // If on /login or /admin, render immediately
-  if (pathname === "/login" || pathname.startsWith("/admin")) {
+  if (pathname === "/" || pathname === "/login" || pathname.startsWith("/admin")) {
     return <>{children}</>;
   }
 

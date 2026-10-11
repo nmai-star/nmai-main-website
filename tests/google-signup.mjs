@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import { applyGoogleIdentity } from "../lib/auth-store.ts";
+
+const accounts = [];
+const identity = { sub: "google-test-id", email: "Test@example.com", name: "Test" };
+assert.equal(applyGoogleIdentity(accounts, identity, "signin").result, "missing");
+assert.equal(accounts.length, 0, "Login must never register a new account");
+const signup = applyGoogleIdentity(accounts, identity, "signup");
+assert.equal(signup.result, "created");
+assert.equal(signup.account.status, "pending");
+assert.deepEqual(signup.account.courses, []);
+assert.equal(applyGoogleIdentity(accounts, identity, "signup").result, "exists");
+assert.equal(accounts.length, 1, "Repeat signup must not duplicate the account");
+assert.equal(applyGoogleIdentity(accounts, identity, "signin").account.status, "pending");
+accounts[0].status = "approved";
+assert.equal(applyGoogleIdentity(accounts, identity, "signup").result, "exists", "Signup must not auto-login even approved accounts");
+assert.equal(applyGoogleIdentity(accounts, identity, "signin").account.status, "approved");
+accounts[0].status = "suspended";
+assert.equal(applyGoogleIdentity(accounts, identity, "signin").account.status, "suspended");
+assert.throws(() => applyGoogleIdentity(accounts, { ...identity, sub: "different-id" }, "signin"));
+console.log("PASS: Gmail signup/login separation, duplicate signup, pending approval, approved and suspended accounts, identity mismatch.");

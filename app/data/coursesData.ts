@@ -95,7 +95,7 @@ export function getCourses(): CourseItem[] {
     const raw = localStorage.getItem(COURSES_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
