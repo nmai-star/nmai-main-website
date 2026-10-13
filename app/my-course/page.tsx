@@ -4,5 +4,5 @@ import { getStudentCourses } from "@/lib/course-store";
 
 export default async function Page() {
   const account = await requirePortalAccess();
-  return <PortalClient initialCourses={getStudentCourses(account)} />;
+  return <PortalClient initialCourses={await getStudentCourses(account)} />;
 }

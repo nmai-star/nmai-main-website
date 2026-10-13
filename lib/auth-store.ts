@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import postgres from "postgres";
 import type { CourseItem } from "../app/data/coursesData";
 
 export type Account = {
@@ -13,8 +14,27 @@ type Store = { accounts: Account[]; sessions: Session[]; courses?: CourseItem[] 
 const directory = process.env.NMAI_AUTH_DATA_DIR || path.join(process.cwd(), ".local-data");
 const filename = path.join(directory, "auth.json");
 
-// A local, single-server store. Synchronous transactions prevent lost updates within this process.
-export function transaction<T>(operation: (store: Store) => T): T {
+let database: ReturnType<typeof postgres> | undefined;
+// The database row lock serializes updates across Vercel instances, including deletions.
+export async function transaction<T>(operation: (store: Store) => T): Promise<T> {
+  const url = process.env.DATABASE_URL;
+  if (url) {
+    database ??= postgres(url, { max: 3, idle_timeout: 20, connect_timeout: 15, prepare: false, ssl: { rejectUnauthorized: true } });
+    const wrapped = await database.begin(async sql => {
+      const rows = await sql`SELECT data FROM nmai_portal_store WHERE id = 'primary' FOR UPDATE`;
+      if (!rows.length) throw new Error("Portal database has not been initialized.");
+      const store = rows[0].data as Store;
+      const before = JSON.stringify(store);
+      store.sessions = store.sessions.filter(s => s.expires > Date.now());
+      const result = operation(store);
+      const after = JSON.stringify(store);
+      if (after !== before) await sql`UPDATE nmai_portal_store SET data = ${sql.json(JSON.parse(after))} WHERE id = 'primary'`;
+      return { result };
+    });
+    return wrapped.result;
+  }
+  if (process.env.VERCEL) throw new Error("DATABASE_URL is required on Vercel.");
+  // Local development keeps using the existing local data file.
   mkdirSync(directory, { recursive: true });
   const store: Store = existsSync(filename)
     ? JSON.parse(readFileSync(filename, "utf8")) : { accounts: [], sessions: [] };
@@ -40,12 +60,12 @@ export function verifyPassword(password: string, stored?: string) {
 export function safeEqual(a: string, b: string) {
   return timingSafeEqual(Buffer.from(hashToken(a)), Buffer.from(hashToken(b)));
 }
-export function createSession(accountId: string, admin = false) {
+export async function createSession(accountId: string, admin = false) {
   const token = randomBytes(32).toString("hex");
-  transaction(store => store.sessions.push({ tokenHash: hashToken(token), accountId, admin, expires: Date.now() + 8 * 3600_000 }));
+  await transaction(store => store.sessions.push({ tokenHash: hashToken(token), accountId, admin, expires: Date.now() + 8 * 3600_000 }));
   return token;
 }
-export function getSession(token?: string, admin = false): Account | true | null {
+export async function getSession(token?: string, admin = false): Promise<Account | true | null> {
   if (!token) return null;
   return transaction(store => {
     const session = store.sessions.find(s => s.tokenHash === hashToken(token) && !!s.admin === admin);

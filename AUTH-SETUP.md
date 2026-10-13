@@ -40,6 +40,10 @@ Reference: [Google web-server OAuth documentation](https://developers.google.com
 
 ## Local storage scope
 
-Accounts, course catalog, assignments and server sessions persist in `.local-data/auth.json`, outside public assets and ignored by Git. This store is for a single local server process; use a shared transactional database before multi-instance or ephemeral/serverless hosting. No existing local browser demo records are automatically trusted or migrated.
+Local development stores accounts, courses, assignments and sessions in `.local-data/auth.json`, ignored by Git. On Vercel, `DATABASE_URL` is required and the application uses Postgres. A database transaction and row lock protect updates across instances. Missing database configuration fails closed; production never falls back to temporary filesystem storage.
+
+To initialize a new database once, pull production configuration into the ignored `.env.production.local`, then run `node scripts/initialize-database.mjs`. This copies the local accounts and course catalog, excludes sessions, and never overwrites an existing production record. Subsequent deployments use the same database without reseeding deleted accounts.
+
+Production uses `https://nmai-main-website.vercel.app`. Configure `NMAI_BASE_URL` to that origin and add `https://nmai-main-website.vercel.app/api/auth/google/callback` to the Google OAuth client's authorized redirects. Store Google credentials and `NMAI_ADMIN_PASSKEY` as production environment variables. GitHub updates to the production branch automatically deploy to the existing domain.
 
 The course catalog and access assignments are now server-managed. Tool catalog and profile editing still use their existing browser storage. Course management edits metadata and access; it does not author video lessons or create new lesson pages. Any future paid video/download API must also enforce server-side course authorization.

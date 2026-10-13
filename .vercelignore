@@ -1,0 +1,10 @@
+.env*
+.local-data/**
+.agents/**
+skills-lock.json
+scripts/**
+tests/**
+.git/**
+.next/**
+node_modules/**
+*.tsbuildinfo
