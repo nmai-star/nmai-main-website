@@ -34,14 +34,13 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              let theme = 'dark';
               try {
-                const theme = localStorage.getItem('nmai-theme');
-                if (theme === 'light') {
-                  document.documentElement.classList.add('light');
-                } else {
-                  document.documentElement.classList.add('dark');
-                }
-              } catch (e) {}
+                const saved = localStorage.getItem('nmai-theme');
+                if (['dark', 'light', 'ocean', 'forest', 'rose'].includes(saved)) theme = saved;
+              } catch {}
+              document.documentElement.dataset.theme = theme;
+              document.documentElement.classList.add(theme === 'light' ? 'light' : 'dark');
             `,
           }}
         />
