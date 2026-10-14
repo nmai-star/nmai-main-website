@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "../components/ThemeToggle";
 import SignOutButton from "../components/SignOutButton";
-import { getAiTools } from "../data/aiToolsData";
+import { getAiTools, INITIAL_AI_TOOLS, type AITool } from "../data/aiToolsData";
 import { hasAnyCourseAccess } from "../data/enrolledStudents";
 import {
   ArrowLeft,
@@ -40,190 +40,6 @@ import {
   Settings,
 } from "lucide-react";
 
-type AITool = {
-  id: string;
-  name: string;
-  category: "Gemini Gems" | "Text & Reasoning" | "Video & Avatars" | "Image & Creative" | "Voice & Audio" | "Automation & Agents" | "Productivity";
-  pricing: "Free" | "Freemium" | "Paid";
-  rating: number;
-  description: string;
-  bestFor: string;
-  website: string;
-  iconBg: string;
-  iconColor: string;
-  promptExample: string;
-  practicalWorkflow: string;
-  tags: string[];
-};
-
-const aiTools: AITool[] = [
-  {
-    id: "custom-gemini-gem-1",
-    name: "NMAI Sales Objection Mentor",
-    category: "Gemini Gems",
-    pricing: "Free",
-    rating: 5.0,
-    description: "Custom-trained Gemini assistant created specifically for NMAI. Pre-configured with specialized instructions, conversation frameworks, and practical business knowledge.",
-    bestFor: "Personalized course guidance, objection handling, sales scripts & direct student support",
-    website: "https://gemini.google.com/gem/16HfUl9hwpduJh9TIkPFJ171ZU-2n8-68?usp=sharing",
-    iconBg: "bg-gradient-to-tr from-blue-500/20 via-purple-500/20 to-cyan-400/20",
-    iconColor: "text-cyan-300",
-    promptExample: "Help me practice handling customer objections using the NMAI conversation system.",
-    practicalWorkflow: "Click Launch Gem -> Opens directly in Google Gemini -> Start asking questions with preloaded knowledge.",
-    tags: ["Gemini Gem", "Custom AI", "Google Gemini", "NMAI Exclusive"],
-  },
-  {
-    id: "chatgpt",
-    name: "ChatGPT",
-    category: "Text & Reasoning",
-    pricing: "Freemium",
-    rating: 4.9,
-    description: "Industry-standard conversational AI for copywriting, business strategy, curriculum planning, and problem solving.",
-    bestFor: "Content creation, lesson scripts, customer emails & sales scripts",
-    website: "https://chatgpt.com",
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-400",
-    promptExample: "Act as an expert digital educator. Create a 5-day email onboarding sequence for new students joining our online business course, focusing on building high confidence and immediate action.",
-    practicalWorkflow: "Use ChatGPT to draft lesson scripts -> Refine tone -> Generate quiz questions for each module.",
-    tags: ["OpenAI", "Copywriting", "GPT-4o", "Scripts"],
-  },
-  {
-    id: "claude",
-    name: "Claude 3.7 Sonnet",
-    category: "Text & Reasoning",
-    pricing: "Freemium",
-    rating: 4.9,
-    description: "Anthropic's flagship model known for nuanced writing, deep reasoning, long document analysis, and high-accuracy code.",
-    bestFor: "Complex course architectures, analytical business reviews, and human-sounding longform writing",
-    website: "https://claude.ai",
-    iconBg: "bg-amber-500/10",
-    iconColor: "text-amber-400",
-    promptExample: "Review this 4-module network marketing course outline. Analyze it for student drop-off risks and suggest 3 interactive exercises that reinforce active retailing.",
-    practicalWorkflow: "Upload PDF slides or ebooks into Claude -> Ask it to summarize into bite-sized actionable cheat sheets.",
-    tags: ["Anthropic", "Analysis", "Deep Thinking", "Education"],
-  },
-  {
-    id: "perplexity",
-    name: "Perplexity AI",
-    category: "Text & Reasoning",
-    pricing: "Freemium",
-    rating: 4.8,
-    description: "Real-time AI search engine that delivers cited research, market competitor breakdowns, and verifiable sources.",
-    bestFor: "Fact-checking, finding market trends, and industry research with links",
-    website: "https://perplexity.ai",
-    iconBg: "bg-cyan-500/10",
-    iconColor: "text-cyan-400",
-    promptExample: "What are the top 5 emerging consumer product retailing trends in 2026? Provide statistics and credible sources.",
-    practicalWorkflow: "Research course topics on Perplexity -> Extract verified facts -> Insert citations directly into your lessons.",
-    tags: ["Search", "Research", "Real-time", "Citations"],
-  },
-  {
-    id: "heygen",
-    name: "HeyGen",
-    category: "Video & Avatars",
-    pricing: "Freemium",
-    rating: 4.8,
-    description: "Create studio-quality video lessons using photorealistic AI avatars and automatic voice translation in 40+ languages.",
-    bestFor: "Course video lessons, multilingual outreach, and instructor avatars without expensive camera gear",
-    website: "https://heygen.com",
-    iconBg: "bg-purple-500/10",
-    iconColor: "text-purple-400",
-    promptExample: "Select an executive avatar -> Paste your lesson script -> Translate to Spanish, Hindi, or French with lip-sync matching.",
-    practicalWorkflow: "Write course script in Claude -> Paste into HeyGen -> Export 1080p lesson video directly for your student portal.",
-    tags: ["Avatars", "Video AI", "Multilingual", "No Camera"],
-  },
-  {
-    id: "runway",
-    name: "Runway Gen-3",
-    category: "Video & Avatars",
-    pricing: "Freemium",
-    rating: 4.7,
-    description: "Next-generation video creation engine turning text prompts and static images into cinematic B-roll and trailers.",
-    bestFor: "High-impact course intro trailers, promotional video ads, and dynamic background motion",
-    website: "https://runwayml.com",
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-400",
-    promptExample: "Cinematic drone shot soaring over modern digital entrepreneurs working in a futuristic glass coworking space, golden hour lighting, 4k.",
-    practicalWorkflow: "Generate course concept art in Midjourney -> Animate in Runway Gen-3 -> Use as course module intro video.",
-    tags: ["Text-to-Video", "B-Roll", "Cinematic", "Motion"],
-  },
-  {
-    id: "midjourney",
-    name: "Midjourney v6",
-    category: "Image & Creative",
-    pricing: "Paid",
-    rating: 4.9,
-    description: "The gold standard AI image generator for stunning course covers, concept art, and high-converting marketing thumbnails.",
-    bestFor: "Course card visuals, website banners, social post graphics, and brand imagery",
-    website: "https://midjourney.com",
-    iconBg: "bg-indigo-500/10",
-    iconColor: "text-indigo-400",
-    promptExample: "/imagine modern digital marketing command center with glowing holographic charts, ultra-clean UI, cyber navy and cyan tones --ar 16:9 --v 6.0",
-    practicalWorkflow: "Generate high-resolution thumbnails for your lessons -> Upscale -> Place in NMAI course catalog.",
-    tags: ["Image AI", "Cover Art", "Photorealistic", "Design"],
-  },
-  {
-    id: "canva-magic",
-    name: "Canva Magic Studio",
-    category: "Image & Creative",
-    pricing: "Freemium",
-    rating: 4.7,
-    description: "Suite of AI tools inside Canva for instant slide deck generation, background removal, and brand asset resizing.",
-    bestFor: "Fast presentation slides, downloadable student worksheets, and Instagram carousels",
-    website: "https://canva.com",
-    iconBg: "bg-pink-500/10",
-    iconColor: "text-pink-400",
-    promptExample: "Generate a 10-slide presentation deck on 'Modern Customer Conversations for Network Marketers' with a dark sleek theme.",
-    practicalWorkflow: "Generate slides with Canva Magic -> Export as PDF -> Attach as downloadable course resource.",
-    tags: ["Presentations", "Worksheets", "Social", "Templates"],
-  },
-  {
-    id: "elevenlabs",
-    name: "ElevenLabs",
-    category: "Voice & Audio",
-    pricing: "Freemium",
-    rating: 4.9,
-    description: "The world's leading generative AI voice platform with ultra-realistic voice cloning and emotional cadence control.",
-    bestFor: "Professional voiceovers for video lessons, audio summaries, and multilingual course dubbing",
-    website: "https://elevenlabs.io",
-    iconBg: "bg-rose-500/10",
-    iconColor: "text-rose-400",
-    promptExample: "Record 1 minute of your voice -> Clone your voice profile -> Generate crystal-clear audio lessons without a microphone.",
-    practicalWorkflow: "Generate narration in ElevenLabs -> Combine with screen recordings or slides for polished course content.",
-    tags: ["Voice Clone", "Audio", "Narration", "Dubbing"],
-  },
-  {
-    id: "make",
-    name: "Make.com (Integromat)",
-    category: "Automation & Agents",
-    pricing: "Freemium",
-    rating: 4.8,
-    description: "Visual workflow automation platform to connect your landing pages, databases, AI models, and communication channels.",
-    bestFor: "Automated student welcome sequences, WhatsApp lead follow-ups, and CRM lead capture",
-    website: "https://make.com",
-    iconBg: "bg-violet-500/10",
-    iconColor: "text-violet-400",
-    promptExample: "Webhook: New student sign-up -> Send ChatGPT personalized welcome message -> Notify instructor on Telegram -> Add row to Google Sheet.",
-    practicalWorkflow: "Create a 3-step automation: Form Submit -> AI categorization -> Instant WhatsApp message.",
-    tags: ["Workflows", "No-code", "Webhooks", "Integrations"],
-  },
-  {
-    id: "notion-ai",
-    name: "Notion AI",
-    category: "Productivity",
-    pricing: "Freemium",
-    rating: 4.7,
-    description: "Connected workspace with built-in AI for curriculum planning, student resource wikis, and project management.",
-    bestFor: "Organizing your courses, tracking lesson production, and generating student resource docs",
-    website: "https://notion.so",
-    iconBg: "bg-slate-500/10",
-    iconColor: "text-slate-300",
-    promptExample: "Summarize this page into 5 key bullet points and create a checklist of action items for a beginner student.",
-    practicalWorkflow: "Manage your entire NMAI course pipeline, lesson scripts, and student FAQs in one shared AI workspace.",
-    tags: ["Workspace", "Wiki", "Project Management", "Notes"],
-  },
-];
-
 const categories = [
   "All",
   "Gemini Gems",
@@ -247,10 +63,13 @@ export default function AIToolsPage() {
   const [lockedModalOpen, setLockedModalOpen] = useState<boolean>(false);
   const [communityLockedModalOpen, setCommunityLockedModalOpen] = useState<boolean>(false);
 
-  const [toolsList, setToolsList] = useState<AITool[]>(aiTools);
+  const [toolsList, setToolsList] = useState<AITool[]>(INITIAL_AI_TOOLS);
 
   useEffect(() => {
-    setToolsList(getAiTools());
+    const refreshTools = () => setToolsList(getAiTools());
+    refreshTools();
+    window.addEventListener("storage", refreshTools);
+    window.addEventListener("focus", refreshTools);
 
     const evaluateEnrollment = () => {
       try {
@@ -272,6 +91,8 @@ export default function AIToolsPage() {
     window.addEventListener("storage", evaluateEnrollment);
     window.addEventListener("nmai-student-updated", evaluateEnrollment);
     return () => {
+      window.removeEventListener("storage", refreshTools);
+      window.removeEventListener("focus", refreshTools);
       window.removeEventListener("storage", evaluateEnrollment);
       window.removeEventListener("nmai-student-updated", evaluateEnrollment);
     };
@@ -295,7 +116,7 @@ export default function AIToolsPage() {
 
       return matchesCategory && matchesPricing && matchesSearch;
     });
-  }, [selectedCategory, selectedPricing, searchQuery]);
+  }, [toolsList, selectedCategory, selectedPricing, searchQuery]);
 
   const handleCopyPrompt = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -509,9 +330,11 @@ export default function AIToolsPage() {
               </h1>
 
               <p className="mt-4 text-sm leading-7 text-slate-400 md:text-base">
-                Discover the highest-leverage AI tools for creators, educators, and network marketers.
-                Copy proven prompt formulas, understand real-world workflows, and boost your daily productivity.
+                Explore {toolsList.length} AI tools for writing, research, design, video, audio and automation.
+                Each tool includes an official link, an example prompt and a practical workflow.
               </p>
+
+              <p className="mt-2 text-xs text-slate-500">Third-party tools have their own accounts and plans. Check each official website for current pricing and usage limits.</p>
 
               {/* SEARCH BAR */}
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -537,9 +360,9 @@ export default function AIToolsPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs text-slate-500">Pricing:</span>
-                  {(["All", "Free", "Freemium", "Paid"] as const).map((p) => (
+                  {(["All", "Free", "Freemium", "Paid", "Check website"] as const).map((p) => (
                     <button
                       key={p}
                       onClick={() => setSelectedPricing(p)}
@@ -562,8 +385,8 @@ export default function AIToolsPage() {
             {categories.map((cat) => {
               const count =
                 cat === "All"
-                  ? aiTools.length
-                  : aiTools.filter((t) => t.category === cat).length;
+                  ? toolsList.length
+                  : toolsList.filter((t) => t.category === cat).length;
 
               return (
                 <button
