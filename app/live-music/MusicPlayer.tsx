@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Headphones, Repeat, SkipBack, SkipForward } from "lucide-react";
+import { ArrowLeft, Repeat, SkipBack, SkipForward } from "lucide-react";
 import NavigationMenu from "../components/NavigationMenu";
 import ThemeToggle from "../components/ThemeToggle";
 
-import { PLAYLIST_URL as playlistUrl, type MusicTrack } from "@/lib/music-playlist";
+import { type MusicTrack } from "@/lib/music-playlist";
 
 export default function MusicPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -120,7 +120,7 @@ export default function MusicPlayer() {
         if (audioRef.current && !audioRef.current.getAttribute("src") && data.tracks[0]) {
           audioRef.current.src = data.tracks[0].source;
         }
-        setSyncStatus("Auto-sync on · Checks every minute");
+        setSyncStatus("");
       } catch {
         if (!cancelled) setSyncStatus("Sync unavailable. Showing the last loaded playlist; retrying automatically.");
       } finally { inFlight = false; }
@@ -153,7 +153,7 @@ export default function MusicPlayer() {
     void audio.play().catch((reason: unknown) => {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
       setPlaying(false);
-      setError("Playback could not start. Try the player’s Play button or open this playlist in Flow Music.");
+      setError("Playback could not start. Try the player’s Play button again.");
     });
   }
 
@@ -163,9 +163,7 @@ export default function MusicPlayer() {
       <div className="flex items-center gap-4"><Link href="/ai-tools" className="text-sm text-slate-400 hover:text-white">AI Tools</Link><ThemeToggle /></div>
     </header>
     <main className="mx-auto max-w-5xl px-5 py-10 sm:px-10">
-      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-cyan-300"><Headphones size={16} />NMAI Live Music</p>
-      <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">Find your rhythm.</h1>
-      <p className="mt-4 max-w-xl text-sm leading-6 text-slate-400">Your EDM & phonk listening corner. Press play, pick a track and enjoy the music right here.</p>
+      <h1 className="text-3xl font-bold tracking-tight text-white">Live Music</h1>
 
       <div className="mt-8 grid items-start gap-5 md:grid-cols-[1.1fr_1fr]">
         <section aria-label="Music player" className="min-w-0 rounded-3xl border border-cyan-400/20 bg-[#080D17] p-5 sm:p-7">
@@ -179,7 +177,7 @@ export default function MusicPlayer() {
           {/* Track changes update the media element directly to keep play() in the user gesture. */}
           <audio ref={audioRef} crossOrigin="anonymous" controls preload="none" aria-label={`Play ${track?.name ?? "Choose a track"}`} className="mt-6 w-full"
             onPlay={() => { activateVisualizer(); setPlaying(true); setError(""); }} onPause={() => setPlaying(false)}
-            onError={() => { setPlaying(false); setError("This track is currently unavailable. Try another track or open Flow Music below."); }}
+            onError={() => { setPlaying(false); setError("This track is currently unavailable. Try another track."); }}
             onEnded={() => { setPlaying(false); if (selected < tracks.length - 1) playTrack(selected + 1); else if (repeat && tracks.length) playTrack(0); }} />
           <div className="mt-4 flex items-center justify-between gap-2">
             <button disabled={!tracks.length} onClick={() => playTrack((selected + tracks.length - 1) % tracks.length)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs hover:bg-white/5"><SkipBack size={16} />Previous</button>
@@ -190,20 +188,17 @@ export default function MusicPlayer() {
         </section>
 
         <section aria-label="EDM, PHONK playlist" className="rounded-3xl border border-white/10 bg-[#080D17] p-5 sm:p-7">
-          <p className="text-xs uppercase tracking-widest text-slate-500">Featured playlist</p>
           <h2 className="mt-2 text-2xl font-bold text-white">EDM, PHONK</h2>
           <p className="mt-2 text-sm text-slate-400">{tracks.length} tracks · Dynamokk</p>
-          <p role="status" className="mt-2 text-xs text-cyan-300">{syncStatus}</p>
+          {syncStatus && <p role="status" className="mt-2 text-xs text-cyan-300">{syncStatus}</p>}
           {!tracks.length && <p className="mt-4 text-sm text-slate-400">No playable tracks loaded yet.</p>}
           <ol tabIndex={0} aria-label="Scrollable song list" className="mt-6 h-64 space-y-3 overflow-y-auto overscroll-y-contain rounded-2xl pr-2 focus-visible:outline-2 focus-visible:outline-cyan-400 sm:h-72">{tracks.map((item, index) => <li key={item.source}>
             <button disabled={!tracks.length} onClick={() => playTrack(index)} aria-label={`Play ${item.name}`} aria-current={selected === index ? "true" : undefined} className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition ${selected === index ? "border-cyan-400/30 bg-cyan-400/10" : "border-white/10 hover:bg-white/5"}`}>
               <span className="pt-0.5 text-xs text-cyan-300">{String(index + 1).padStart(2, "0")}</span>
-              <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-white">{item.name}</span><span className="mt-1 block text-xs leading-5 text-slate-400">{item.description}</span></span>
+              <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-white">{item.name}</span></span>
               <span className="text-xs text-slate-400">{item.duration}</span>
             </button>
           </li>)}</ol>
-          <a href={playlistUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-cyan-300 hover:underline">Open in Google Flow Music<ExternalLink size={14} /></a>
-          <p className="mt-3 text-xs leading-5 text-slate-500">Songs added to this shared Flow Music playlist appear automatically. Private or unavailable songs cannot be played here.</p>
         </section>
       </div>
     </main>
