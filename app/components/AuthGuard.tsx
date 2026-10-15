@@ -11,7 +11,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // The login page and admin portal have their own independent auth gates
-    if (pathname === "/" || pathname === "/login" || pathname.startsWith("/admin")) {
+    if (pathname === "/" || pathname === "/my-books" || pathname === "/login" || pathname.startsWith("/admin")) {
       return;
     }
 
@@ -57,7 +57,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   // If on /login or /admin, render immediately
-  if (pathname === "/" || pathname === "/login" || pathname.startsWith("/admin")) {
+  if (pathname === "/" || pathname === "/my-books" || pathname === "/login" || pathname.startsWith("/admin")) {
     return <>{children}</>;
   }
 
