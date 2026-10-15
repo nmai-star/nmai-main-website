@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import NavigationMenu from "../components/NavigationMenu";
 import ThemeToggle from "../components/ThemeToggle";
 import {
   ArrowLeft,
@@ -94,6 +95,7 @@ export default function LearningPaths() {
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050B14]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[80px] max-w-[1500px] items-center justify-between px-5 lg:px-8">
           <div className="flex items-center gap-5">
+            <NavigationMenu />
             <a
               href="/"
               className="flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"

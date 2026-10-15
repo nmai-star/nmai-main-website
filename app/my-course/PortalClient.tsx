@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BookOpen, PlayCircle, ArrowLeft, Lock, MessageCircle } from "lucide-react";
+import NavigationMenu from "../components/NavigationMenu";
 import ThemeToggle from "../components/ThemeToggle";
 import SignOutButton from "../components/SignOutButton";
 import type { CourseItem } from "../data/coursesData";
@@ -44,7 +45,7 @@ export default function MyCoursesPage({ initialCourses, allCourses = false }: { 
     <div className="min-h-screen bg-[#05070D] text-white">
       <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#05070D]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-6 lg:px-10">
-          <Link href="/" className="flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"><ArrowLeft size={17} /><span className="hidden sm:inline">Back to Dashboard</span></Link>
+          <NavigationMenu />
           <Link href="/" aria-label="NMAI dashboard"><Image src="/nmai-logo.png" alt="NMAI" width={120} height={44} className="h-11 w-auto object-contain" /></Link>
           <div className="flex items-center gap-3"><ThemeToggle /><SignOutButton /></div>
         </div>

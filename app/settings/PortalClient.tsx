@@ -39,6 +39,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
+import NavigationMenu from "../components/NavigationMenu";
 import ThemeToggle from "../components/ThemeToggle";
 import SignOutButton from "../components/SignOutButton";
 import { playClickSound } from "../utils/sound";
@@ -445,12 +446,13 @@ export default function ProfileSettingsPage() {
       <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#070B14]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[70px] max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-4">
+            <NavigationMenu />
             <Link
               href="/"
               className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-400/40 hover:bg-white/[0.07] hover:text-white"
             >
               <ArrowLeft size={15} />
-              <span>Back to Dashboard</span>
+              <span className="hidden sm:inline">Back to Dashboard</span>
             </Link>
 
             <div className="hidden h-5 w-[1px] bg-white/10 sm:block" />

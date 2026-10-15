@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Headphones, Repeat, SkipBack, SkipForward } from "lucide-react";
+import NavigationMenu from "../components/NavigationMenu";
 import ThemeToggle from "../components/ThemeToggle";
 
 import { PLAYLIST_URL as playlistUrl, type MusicTrack } from "@/lib/music-playlist";
@@ -158,7 +159,7 @@ export default function MusicPlayer() {
 
   return <div className="min-h-screen bg-[#05070D] text-slate-100">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-5 sm:px-10">
-      <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white"><ArrowLeft size={16} />Dashboard</Link>
+      <div className="flex items-center gap-3"><NavigationMenu /><Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white"><ArrowLeft size={16} />Dashboard</Link></div>
       <div className="flex items-center gap-4"><Link href="/ai-tools" className="text-sm text-slate-400 hover:text-white">AI Tools</Link><ThemeToggle /></div>
     </header>
     <main className="mx-auto max-w-5xl px-5 py-10 sm:px-10">

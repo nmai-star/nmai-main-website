@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import NavigationMenu from "../components/NavigationMenu";
 import ThemeToggle from "../components/ThemeToggle";
 import SignOutButton from "../components/SignOutButton";
 import { getAiTools, INITIAL_AI_TOOLS, type AITool } from "../data/aiToolsData";
@@ -57,7 +58,6 @@ export default function AIToolsPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
   const [expandedTipId, setExpandedTipId] = useState<string | null>(null);
-  const [mobileMenu, setMobileMenu] = useState<boolean>(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
   const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
   const [lockedModalOpen, setLockedModalOpen] = useState<boolean>(false);
@@ -131,119 +131,14 @@ export default function AIToolsPage() {
       {/* =====================================================
           DESKTOP SIDEBAR
       ===================================================== */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-[250px] lg:flex-col lg:border-r lg:border-white/[0.06] lg:bg-[#05070D]/95 lg:backdrop-blur-xl">
-        <div className="flex h-[72px] items-center gap-3 border-b border-white/[0.06] px-6">
-          <Link href="/" className="flex items-center">
-            <img
-              src="/nmai-logo.png"
-              alt="NMAI"
-              className="h-10 w-auto object-contain"
-            />
-          </Link>
-        </div>
-
-        <div className="flex flex-1 flex-col justify-between overflow-y-auto px-4 py-6">
-          <div className="space-y-6">
-            <div>
-              <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                Menu
-              </p>
-              <nav className="space-y-1">
-                <Link
-                  href="/"
-                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-white"
-                >
-                  <LayoutDashboard size={18} className="text-slate-500 group-hover:text-cyan-300" />
-                  Dashboard
-                </Link>
-
-                <Link
-                  href="/courses/network-marketing"
-                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-white"
-                >
-                  <GraduationCap size={18} className="text-slate-500 group-hover:text-cyan-300" />
-                  Courses
-                </Link>
-
-                <Link
-                  href="/learning-paths"
-                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-white"
-                >
-                  <Compass size={18} className="text-slate-500 group-hover:text-cyan-300" />
-                  Learning Paths
-                </Link>
-
-                <Link
-                  href="/ai-tools"
-                  className="flex items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.08] px-3 py-2.5 text-sm font-semibold text-cyan-300 shadow-sm"
-                >
-                  <Bot size={18} className="text-cyan-300" />
-                  AI Tools
-                </Link>
-
-                {isEnrolled ? (
-                  <a
-                    href="https://chat.whatsapp.com/CjZKNudezQp46MRqsUOTBR"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-white"
-                  >
-                    <MessageCircle size={18} className="text-slate-500 group-hover:text-cyan-300" />
-                    Community
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => setCommunityLockedModalOpen(true)}
-                    className="group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-slate-500 transition hover:bg-white/[0.04] hover:text-slate-400"
-                  >
-                    <div className="flex items-center gap-3">
-                      <MessageCircle size={18} className="text-slate-600 group-hover:text-slate-500" />
-                      <span>Community</span>
-                    </div>
-                    <span className="flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 border border-amber-500/20">
-                      <Lock size={9} />
-                      Locked
-                    </span>
-                  </button>
-                )}
-              </nav>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-b from-blue-500/[0.08] to-transparent p-4">
-            <div className="flex items-center gap-2 text-cyan-300">
-              <Crown size={17} />
-              <span className="text-sm font-semibold text-white">NMAI Pro</span>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-slate-400">
-              Unlock prompt templates, AI workflows and future masterclasses.
-            </p>
-            <Link
-              href="/"
-              className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
-            >
-              Explore Pro
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
-      </aside>
-
-      {/* =====================================================
-          MAIN VIEWPORT
-      ===================================================== */}
-      <main className="lg:pl-[250px]">
+      <main>
         {/* TOPBAR */}
         <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#05070D]/90 backdrop-blur-xl">
-          <div className="flex h-[72px] items-center justify-between px-4 md:px-7">
+          <div className="flex min-h-[72px] flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-7">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => setMobileMenu(true)}
-                className="rounded-xl border border-white/10 p-2 text-slate-300 hover:bg-white/5 lg:hidden"
-                aria-label="Open mobile menu"
-              >
-                <Menu size={18} />
-              </button>
+              <NavigationMenu>
+                {isEnrolled ? <a href="https://chat.whatsapp.com/CjZKNudezQp46MRqsUOTBR" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-300"><MessageCircle size={18} />Community</a> : <button onClick={() => setCommunityLockedModalOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-400"><Lock size={18} />Community · Locked</button>}
+              </NavigationMenu>
 
               <div className="flex items-center gap-2">
                 <Link
@@ -639,112 +534,6 @@ export default function AIToolsPage() {
           )}
         </div>
       </main>
-
-      {/* =====================================================
-          MOBILE SLIDEOUT MENU
-      ===================================================== */}
-      <AnimatePresence>
-        {mobileMenu && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileMenu(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-
-            <motion.div
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative flex h-full w-[280px] flex-col border-r border-white/10 bg-[#05070D] p-6 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 text-white">
-                    <Sparkles size={16} />
-                  </div>
-                  <span className="font-bold text-white">NMAI</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ThemeToggle />
-                  <button
-                    onClick={() => setMobileMenu(false)}
-                    className="rounded-lg p-1.5 text-slate-400 hover:text-white"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <nav className="mt-6 space-y-1.5">
-                <Link
-                  href="/"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-white/5"
-                >
-                  <LayoutDashboard size={18} />
-                  Dashboard
-                </Link>
-                <Link
-                  href="/courses/network-marketing"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-white/5"
-                >
-                  <GraduationCap size={18} />
-                  Courses
-                </Link>
-                <Link
-                  href="/learning-paths"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-white/5"
-                >
-                  <Compass size={18} />
-                  Learning Paths
-                </Link>
-                <Link
-                  href="/ai-tools"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-3 rounded-xl bg-cyan-400/10 px-3 py-2.5 text-sm font-semibold text-cyan-300"
-                >
-                  <Bot size={18} />
-                  AI Tools
-                </Link>
-                {isEnrolled ? (
-                  <a
-                    href="https://chat.whatsapp.com/CjZKNudezQp46MRqsUOTBR"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-white/5"
-                  >
-                    <MessageCircle size={18} />
-                    Community
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setMobileMenu(false);
-                      setCommunityLockedModalOpen(true);
-                    }}
-                    className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-slate-500 hover:bg-white/5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <MessageCircle size={18} />
-                      <span>Community</span>
-                    </div>
-                    <span className="flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 border border-amber-500/20">
-                      <Lock size={9} />
-                      Locked
-                    </span>
-                  </button>
-                )}
-              </nav>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* ACCESS LOCKED MODAL */}
       <AnimatePresence>

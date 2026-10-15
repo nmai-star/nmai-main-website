@@ -177,3 +177,10 @@ html[data-theme]:not([data-theme="light"]) .text-slate-400 { color:var(--muted);
 .theme-picker-footer button { background:var(--accent); color:var(--background); border-radius:10px; padding:10px 20px; font-size:13px; font-weight:700; cursor:pointer; }
 html[data-theme="light"] .theme-picker-footer button { color:#fff; }
 @media (prefers-reduced-motion:reduce) { body { transition:none; } html { scroll-behavior:auto; } }
+
+/* Native modal navigation keeps focus inside the drawer and supports Escape. */
+.navigation-drawer { position: fixed; inset: 0 auto 0 0; margin: 0; width: min(320px, 88vw); height: 100dvh; max-height: 100dvh; max-width: 88vw; padding: 0; overflow-y: auto; overscroll-behavior: contain; }
+.navigation-drawer::backdrop { background: rgb(0 0 0 / 65%); backdrop-filter: blur(3px); }
+.navigation-drawer[open] { animation: navigation-slide-in 200ms ease-out; }
+@keyframes navigation-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .navigation-drawer[open] { animation: none; } }

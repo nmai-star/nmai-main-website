@@ -1104,13 +1104,14 @@ export default function Dashboard() {
           onClick={() =>
             setMobileSidebar(false)
           }
-          className="fixed inset-0 z-[60] bg-black/70 lg:hidden"
+          className="fixed inset-0 z-[60] bg-black/70"
         />
       )}
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed bottom-0 left-0 top-0 z-[70] w-[270px] border-r border-white/10 bg-[#070A12] transition-transform duration-300 lg:translate-x-0 ${
+        inert={!mobileSidebar}
+        className={`fixed bottom-0 left-0 top-0 z-[70] w-[270px] border-r border-white/10 bg-[#070A12] transition-transform duration-300 ${
           mobileSidebar
             ? "translate-x-0"
             : "-translate-x-full"
@@ -1130,7 +1131,7 @@ export default function Dashboard() {
               onClick={() =>
                 setMobileSidebar(false)
               }
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 lg:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5"
             >
               <X size={17} />
             </button>
@@ -1244,9 +1245,10 @@ export default function Dashboard() {
       </aside>
 
       {/* MAIN */}
-      <div className="lg:pl-[270px]">
+      <div>
         {/* TOP BAR */}
         <header className="hidden h-20 items-center justify-between border-b border-white/10 bg-[#05070D]/70 px-8 backdrop-blur-xl lg:flex">
+          <button onClick={() => setMobileSidebar(true)} aria-label="Open course navigation" aria-expanded={mobileSidebar} className="mr-4 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 text-cyan-300"><Menu size={23} /></button>
           <div className="relative w-full max-w-xl">
             <Search
               size={17}
