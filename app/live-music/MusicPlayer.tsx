@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Headphones, Music2, Repeat, SkipBack, SkipForward } from "lucide-react";
+import { ArrowLeft, ExternalLink, Headphones, Repeat, SkipBack, SkipForward } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
 import { PLAYLIST_URL as playlistUrl, type MusicTrack } from "@/lib/music-playlist";
 
 export default function MusicPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioGraph = useRef<{ context: AudioContext; analyser: AnalyserNode; source: MediaElementAudioSourceNode } | null>(null);
+  const [visualizerUnavailable, setVisualizerUnavailable] = useState(false);
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [track, setTrack] = useState<MusicTrack | null>(null);
   const [syncStatus, setSyncStatus] = useState("Loading playlist…");
@@ -16,6 +19,88 @@ export default function MusicPlayer() {
   const [playing, setPlaying] = useState(false);
   const [repeat, setRepeat] = useState(false);
   const [error, setError] = useState("");
+
+  function activateVisualizer() {
+    if (!audioRef.current) return;
+    try {
+      if (!audioGraph.current) {
+        const context = new AudioContext();
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.75;
+        const source = context.createMediaElementSource(audioRef.current);
+        source.connect(analyser);
+        analyser.connect(context.destination);
+        audioGraph.current = { context, analyser, source };
+      }
+      void audioGraph.current.context.resume().catch(() => setVisualizerUnavailable(true));
+    } catch { setVisualizerUnavailable(true); }
+  }
+
+  useEffect(() => () => {
+    const graph = audioGraph.current;
+    if (graph) {
+      graph.source.disconnect();
+      graph.analyser.disconnect();
+      void graph.context.close();
+    }
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const drawing = canvas?.getContext("2d");
+    if (!canvas || !drawing) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const frequencies = new Uint8Array(128);
+    let frame = 0;
+    function draw() {
+      if (!canvas || !drawing) return;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+      }
+      drawing.setTransform(ratio, 0, 0, ratio, 0, 0);
+      drawing.clearRect(0, 0, width, height);
+      const active = playing && !document.hidden && !reducedMotion.matches && !visualizerUnavailable;
+      const analyser = audioGraph.current?.analyser;
+      frequencies.fill(0);
+      if (active && analyser) analyser.getByteFrequencyData(frequencies);
+      const gradient = drawing.createLinearGradient(0, height, width, 0);
+      gradient.addColorStop(0, "#22d3ee");
+      gradient.addColorStop(0.5, "#60a5fa");
+      gradient.addColorStop(1, "#c084fc");
+      drawing.fillStyle = gradient;
+      const count = 32;
+      const gap = 4;
+      const barWidth = Math.max(1, (width - 32 - gap * (count - 1)) / count);
+      for (let i = 0; i < count; i++) {
+        const bin = Math.floor(Math.pow(i / count, 1.65) * 100) + 1;
+        const amplitude = active ? frequencies[bin] / 255 : 0;
+        const barHeight = 4 + amplitude * (height - 40);
+        drawing.globalAlpha = active ? 0.65 + amplitude * 0.35 : 0.35;
+        drawing.beginPath();
+        drawing.roundRect(16 + i * (barWidth + gap), (height - barHeight) / 2, barWidth, barHeight, 3);
+        drawing.fill();
+      }
+      drawing.globalAlpha = 1;
+      if (active) frame = requestAnimationFrame(draw);
+    }
+    function refresh() { cancelAnimationFrame(frame); draw(); }
+    const resize = new ResizeObserver(refresh);
+    resize.observe(canvas);
+    document.addEventListener("visibilitychange", refresh);
+    reducedMotion.addEventListener("change", refresh);
+    draw();
+    return () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      document.removeEventListener("visibilitychange", refresh);
+      reducedMotion.removeEventListener("change", refresh);
+    };
+  }, [playing, visualizerUnavailable]);
   useEffect(() => {
     let cancelled = false;
     let inFlight = false;
@@ -56,6 +141,7 @@ export default function MusicPlayer() {
   function playTrack(index: number) {
     const audio = audioRef.current;
     if (!audio || !tracks[index]) return;
+    activateVisualizer();
     setError("");
     setTrack(tracks[index]);
     if (audio.getAttribute("src") !== tracks[index].source) {
@@ -82,13 +168,16 @@ export default function MusicPlayer() {
 
       <div className="mt-8 grid gap-5 md:grid-cols-[1.1fr_1fr]">
         <section aria-label="Music player" className="min-w-0 rounded-3xl border border-cyan-400/20 bg-[#080D17] p-5 sm:p-7">
-          <div className="flex h-44 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600/30 via-purple-600/25 to-cyan-500/20"><Music2 size={64} className="text-cyan-300" aria-hidden="true" /></div>
+          <div className="relative h-44 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/30 via-purple-600/25 to-cyan-500/20">
+            <canvas ref={canvasRef} className="h-full w-full" aria-hidden="true" />
+            <span className="absolute bottom-3 left-4 text-[10px] font-semibold uppercase tracking-widest text-cyan-200">{visualizerUnavailable ? "Enjoy the music" : "Audio spectrum"}</span>
+          </div>
           <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-cyan-300">{playing ? "Now playing" : "Ready to play"}</p>
           <h2 className="mt-2 text-2xl font-bold text-white" aria-live="polite">{track?.name ?? "Choose a track"}</h2>
           <p className="mt-2 text-sm text-slate-400">Dynamokk · EDM, PHONK</p>
           {/* Track changes update the media element directly to keep play() in the user gesture. */}
-          <audio ref={audioRef} controls preload="none" aria-label={`Play ${track?.name ?? "Choose a track"}`} className="mt-6 w-full"
-            onPlay={() => { setPlaying(true); setError(""); }} onPause={() => setPlaying(false)}
+          <audio ref={audioRef} crossOrigin="anonymous" controls preload="none" aria-label={`Play ${track?.name ?? "Choose a track"}`} className="mt-6 w-full"
+            onPlay={() => { activateVisualizer(); setPlaying(true); setError(""); }} onPause={() => setPlaying(false)}
             onError={() => { setPlaying(false); setError("This track is currently unavailable. Try another track or open Flow Music below."); }}
             onEnded={() => { setPlaying(false); if (selected < tracks.length - 1) playTrack(selected + 1); else if (repeat && tracks.length) playTrack(0); }} />
           <div className="mt-4 flex items-center justify-between gap-2">
