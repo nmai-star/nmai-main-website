@@ -166,7 +166,7 @@ export default function MusicPlayer() {
       <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">Find your rhythm.</h1>
       <p className="mt-4 max-w-xl text-sm leading-6 text-slate-400">Your EDM & phonk listening corner. Press play, pick a track and enjoy the music right here.</p>
 
-      <div className="mt-8 grid gap-5 md:grid-cols-[1.1fr_1fr]">
+      <div className="mt-8 grid items-start gap-5 md:grid-cols-[1.1fr_1fr]">
         <section aria-label="Music player" className="min-w-0 rounded-3xl border border-cyan-400/20 bg-[#080D17] p-5 sm:p-7">
           <div className="relative h-44 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/30 via-purple-600/25 to-cyan-500/20">
             <canvas ref={canvasRef} className="h-full w-full" aria-hidden="true" />
@@ -194,7 +194,7 @@ export default function MusicPlayer() {
           <p className="mt-2 text-sm text-slate-400">{tracks.length} tracks · Dynamokk</p>
           <p role="status" className="mt-2 text-xs text-cyan-300">{syncStatus}</p>
           {!tracks.length && <p className="mt-4 text-sm text-slate-400">No playable tracks loaded yet.</p>}
-          <ol className="mt-6 space-y-3">{tracks.map((item, index) => <li key={item.source}>
+          <ol tabIndex={0} aria-label="Scrollable song list" className="mt-6 h-64 space-y-3 overflow-y-auto overscroll-y-contain rounded-2xl pr-2 focus-visible:outline-2 focus-visible:outline-cyan-400 sm:h-72">{tracks.map((item, index) => <li key={item.source}>
             <button disabled={!tracks.length} onClick={() => playTrack(index)} aria-label={`Play ${item.name}`} aria-current={selected === index ? "true" : undefined} className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition ${selected === index ? "border-cyan-400/30 bg-cyan-400/10" : "border-white/10 hover:bg-white/5"}`}>
               <span className="pt-0.5 text-xs text-cyan-300">{String(index + 1).padStart(2, "0")}</span>
               <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-white">{item.name}</span><span className="mt-1 block text-xs leading-5 text-slate-400">{item.description}</span></span>
