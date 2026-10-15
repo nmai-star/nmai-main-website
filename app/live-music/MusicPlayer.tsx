@@ -52,7 +52,8 @@ export default function MusicPlayer() {
           <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-cyan-300">{playing ? "Now playing" : "Ready to play"}</p>
           <h2 className="mt-2 text-2xl font-bold text-white" aria-live="polite">{track.name}</h2>
           <p className="mt-2 text-sm text-slate-400">Dynamokk · EDM, PHONK</p>
-          <audio ref={audioRef} src={track.source} controls preload="none" aria-label={`Play ${track.name}`} className="mt-6 w-full"
+          {/* Track changes update the media element directly to keep play() in the user gesture. */}
+          <audio ref={audioRef} src={tracks[0].source} controls preload="none" aria-label={`Play ${track.name}`} className="mt-6 w-full"
             onPlay={() => { setPlaying(true); setError(""); }} onPause={() => setPlaying(false)}
             onError={() => { setPlaying(false); setError("This track is currently unavailable. Try another track or open Flow Music below."); }}
             onEnded={() => { setPlaying(false); if (selected < tracks.length - 1) playTrack(selected + 1); else if (repeat) playTrack(0); }} />
