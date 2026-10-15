@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Bot, BookOpen, Compass, Home, Palette, Play, Settings, Sparkles, TrendingUp, Users, Workflow } from "lucide-react";
+import { ArrowRight, Bot, BookOpen, Compass, Home, Music2, Palette, Play, Settings, Sparkles, TrendingUp, Users, Workflow } from "lucide-react";
 import FounderSection from "./FounderSection";
 import ThemeToggle from "./ThemeToggle";
 import SignOutButton from "./SignOutButton";
@@ -23,14 +23,14 @@ export default function HomeOverview({ signedIn }: { signedIn: boolean }) {
         <Link href="/" aria-current="page" className="flex items-center gap-3 rounded-xl border border-cyan-400/15 bg-cyan-400/10 px-4 py-3 text-cyan-300"><Home size={18} />Dashboard</Link>
         <a href="#about" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><Compass size={18} />About NMAI</a>
         <a href="#learn" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><Sparkles size={18} />What You’ll Learn</a>
-        {signedIn && <><Link href="/all-courses" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><BookOpen size={18} />All Courses</Link><Link href="/my-course" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><BookOpen size={18} />My Courses</Link><Link href="/ai-tools" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><Bot size={18} />AI Tools</Link><Link href="/settings" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><Settings size={18} />Settings</Link></>}
+        {signedIn && <><Link href="/all-courses" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><BookOpen size={18} />All Courses</Link><Link href="/my-course" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><BookOpen size={18} />My Courses</Link><Link href="/ai-tools" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><Bot size={18} />AI Tools</Link><Link href="/live-music" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><Music2 size={18} />Live Music</Link><Link href="/settings" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"><Settings size={18} />Settings</Link></>}
       </nav>
       <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.025] p-4"><p className="text-sm font-semibold text-white">Learn. Create. Grow.</p><p className="mt-2 text-xs leading-5 text-slate-500">Build practical skills for a world shaped by AI.</p></div>
     </aside>
     <div className="lg:pl-64">
       <header className="sticky top-0 z-30 flex min-h-20 flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] bg-[#05070D]/95 px-5 py-4 backdrop-blur-xl sm:px-10">
         <Link href="/" className="text-sm font-semibold tracking-wide text-white">NMAI <span className="ml-2 font-normal text-slate-500">/ Dashboard</span></Link>
-        <div className="flex items-center gap-3"><ThemeToggle />{signedIn ? <><Link href="/all-courses" className="text-xs font-semibold text-slate-300 hover:text-white">All Courses</Link><Link href="/my-course" className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-500">My Courses</Link><SignOutButton /></> : <><Link href="/login?mode=signin" className="text-sm text-slate-300 hover:text-white">Login</Link><Link href="/login?mode=signup" className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500">Get Started</Link></>}</div>
+        <div className="flex items-center gap-3"><ThemeToggle />{signedIn ? <><Link href="/all-courses" className="text-xs font-semibold text-slate-300 hover:text-white">All Courses</Link><Link href="/my-course" className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-500">My Courses</Link><Link href="/live-music" className="text-xs font-semibold text-cyan-300 hover:text-white">Live Music</Link><SignOutButton /></> : <><Link href="/login?mode=signin" className="text-sm text-slate-300 hover:text-white">Login</Link><Link href="/login?mode=signup" className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500">Get Started</Link></>}</div>
       </header>
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
         <section className="relative overflow-hidden rounded-3xl border border-cyan-400/15 bg-gradient-to-br from-[#10223b] via-[#0A1425] to-[#08101F] px-6 py-12 sm:p-12">

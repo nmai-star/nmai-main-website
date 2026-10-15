@@ -260,6 +260,7 @@ export default function AIToolsPage() {
 
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              <Link href="/live-music" className="text-xs font-semibold text-cyan-300 hover:text-white">Live Music</Link>
               <Link
                 href="/courses/network-marketing"
                 className="hidden rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06] sm:flex items-center gap-2"
