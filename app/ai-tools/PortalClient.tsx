@@ -414,7 +414,7 @@ export default function AIToolsPage() {
           </div>
 
           {/* TOOLS GRID */}
-          <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <AnimatePresence>
               {filteredTools.map((tool, index) => (
                 <motion.div
@@ -424,14 +424,14 @@ export default function AIToolsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.35, delay: index * 0.04 }}
-                  className="group flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#080D17] p-6 transition hover:border-cyan-400/30 hover:shadow-2xl hover:shadow-cyan-500/10"
+                  className="group min-w-0 flex flex-col justify-between rounded-xl border border-white/[0.08] bg-[#080D17] p-4 transition hover:border-cyan-400/30 hover:shadow-lg hover:shadow-cyan-500/10"
                 >
                   <div>
                     {/* CARD HEADER */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <div
-                          className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tool.iconBg} ${tool.iconColor} border border-white/[0.06]`}
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg [&>svg]:size-4 ${tool.iconBg} ${tool.iconColor} border border-white/[0.06]`}
                         >
                           {tool.category === "Gemini Gems" && <Sparkles size={22} className="text-cyan-300" />}
                           {tool.category === "Text & Reasoning" && <Bot size={22} />}
@@ -443,10 +443,10 @@ export default function AIToolsPage() {
                         </div>
 
                         <div>
-                          <h3 className="text-lg font-bold text-white transition group-hover:text-cyan-300">
+                          <h3 className="text-sm font-bold text-white transition group-hover:text-cyan-300">
                             {tool.name}
                           </h3>
-                          <span className="text-xs font-medium text-slate-500">
+                          <span className="text-[11px] font-medium text-slate-500">
                             {tool.category}
                           </span>
                         </div>
@@ -473,12 +473,12 @@ export default function AIToolsPage() {
                     </div>
 
                     {/* DESCRIPTION */}
-                    <p className="mt-4 text-xs leading-5 text-slate-400">
+                    <p className={`mt-2 text-xs leading-5 text-slate-400 ${expandedTipId === tool.id ? "" : "line-clamp-2"}`}>
                       {tool.description}
                     </p>
 
                     {/* BEST FOR BADGE */}
-                    <div className="mt-3.5 rounded-xl border border-white/[0.05] bg-white/[0.02] p-2.5">
+                    <div hidden={expandedTipId !== tool.id} className="mt-2 rounded-lg border border-white/[0.05] bg-white/[0.02] p-2">
                       <p className="text-[11px] font-medium text-slate-500">
                         <span className="font-semibold text-slate-300">Best for: </span>
                         {tool.bestFor}
@@ -486,7 +486,7 @@ export default function AIToolsPage() {
                     </div>
 
                     {/* TAGS */}
-                    <div className="mt-3.5 flex flex-wrap gap-1.5">
+                    <div className={expandedTipId === tool.id ? "mt-2 flex flex-wrap gap-1.5" : "hidden"}>
                       {tool.tags.map((tag) => (
                         <span
                           key={tag}
@@ -498,18 +498,19 @@ export default function AIToolsPage() {
                     </div>
 
                     {/* ACCORDION WORKFLOW & PROMPT */}
-                    <div className="mt-4 border-t border-white/[0.06] pt-3">
+                    <div className="mt-2 border-t border-white/[0.06] pt-1">
                       <button
                         onClick={() =>
                           setExpandedTipId(expandedTipId === tool.id ? null : tool.id)
                         }
-                        className="flex w-full items-center justify-between text-xs font-semibold text-cyan-300 hover:text-cyan-200"
+                        aria-expanded={expandedTipId === tool.id}
+                        className="flex min-h-9 w-full items-center justify-between text-xs font-semibold text-cyan-300 hover:text-cyan-200"
                       >
                         <span className="flex items-center gap-1.5">
                           <Terminal size={14} />
                           {expandedTipId === tool.id
-                            ? "Hide Workflow & Prompt"
-                            : "View Actionable Prompt"}
+                            ? "Hide details"
+                            : "Details & prompt"}
                         </span>
                         <ChevronRight
                           size={14}
@@ -571,7 +572,7 @@ export default function AIToolsPage() {
                   </div>
 
                   {/* ACTION LINKS */}
-                  <div className="mt-5 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                  <div className="mt-2 pt-2 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-2">
                     <button
                       onClick={() =>
                         handleCopyPrompt(tool.id, tool.promptExample)
@@ -597,7 +598,7 @@ export default function AIToolsPage() {
                         className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20"
                       >
                         <Lock size={13} />
-                        Locked • Enrolled Only
+                        Locked
                       </button>
                     ) : (
                       <a
