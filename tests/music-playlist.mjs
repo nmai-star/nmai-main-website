@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readMusicPlaylist } from '../lib/music-playlist.ts';
+import { MUSIC_PLAYLISTS, readMusicPlaylist } from '../lib/music-playlist.ts';
 
 const first = '920607ad-851f-4c83-948d-2a7cdc6c34d3';
 const second = '92308b77-ee69-4fb8-b5cd-531adf4ab7a1';
@@ -26,4 +26,11 @@ assert.deepEqual(await readMusicPlaylist(request), [], 'Private songs excluded')
 ids = [];
 assert.deepEqual(await readMusicPlaylist(request), [], 'Empty playlist is valid');
 await assert.rejects(() => readMusicPlaylist(async () => Response.json({unexpected:true})), /format changed/);
+for (const playlist of MUSIC_PLAYLISTS) {
+  await readMusicPlaylist(async (url, options) => {
+    if (url.includes('/__api/playlists/')) assert.equal(url.split('/').at(-1), playlist.id);
+    return request(url, options);
+  }, playlist.id);
+}
+await assert.rejects(() => readMusicPlaylist(() => { throw new Error('Must not fetch'); }, 'unknown'), /Unknown playlist/);
 console.log('Playlist sync checks passed: additions, removals, reordering, title edits, fresh metadata, private songs, empty playlists, source errors.');

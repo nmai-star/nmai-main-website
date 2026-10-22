@@ -1,4 +1,9 @@
 export const PLAYLIST_ID = "66fccc15-06e8-4fd2-af12-a4f62ea6f356";
+export const MUSIC_PLAYLISTS = [
+  { id: PLAYLIST_ID, name: "EDM, PHONK", mood: "Energy & intensity" },
+  { id: "8690326b-80d6-4d4e-9773-3e121ee81b22", name: "132 BPM DJ Workout Mix", mood: "Move to the beat" },
+  { id: "33af19ac-feca-4a6d-be50-b0914eecfee8", name: "Love and Romantic", mood: "Slow down & unwind" },
+];
 export const PLAYLIST_URL = `https://www.flowmusic.app/playlist/${PLAYLIST_ID}`;
 export type MusicTrack = { id: string; name: string; duration: string; description: string; source: string };
 type RecordData = Record<string, unknown>;
@@ -27,8 +32,9 @@ export function parseTrack(html: string, id: string): MusicTrack | null {
 
 // Flow Music's public website feed is not a versioned integration API.
 // Validate its shape and fail visibly if the source changes; never use account cookies.
-export async function readMusicPlaylist(request: typeof fetch = fetch): Promise<MusicTrack[]> {
-  const response = await request(`https://www.flowmusic.app/__api/playlists/${PLAYLIST_ID}`, { cache: "no-store", signal: AbortSignal.timeout(10000) });
+export async function readMusicPlaylist(request: typeof fetch = fetch, playlistId = PLAYLIST_ID): Promise<MusicTrack[]> {
+  if (!MUSIC_PLAYLISTS.some(playlist => playlist.id === playlistId)) throw new Error("Unknown playlist");
+  const response = await request(`https://www.flowmusic.app/__api/playlists/${playlistId}`, { cache: "no-store", signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error("Playlist unavailable");
   const data = record(await response.json());
   if (!Array.isArray(data.clips)) throw new Error("Playlist format changed");
