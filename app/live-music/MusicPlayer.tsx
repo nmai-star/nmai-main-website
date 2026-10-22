@@ -78,24 +78,75 @@ function PlaylistPlayer({ signedIn, playlist, onSelectPlaylist }: {
       const analyser = audioGraph.current?.analyser;
       frequencies.fill(0);
       if (active && analyser) analyser.getByteFrequencyData(frequencies);
-      const gradient = drawing.createLinearGradient(0, height, width, 0);
-      gradient.addColorStop(0, "#22d3ee");
-      gradient.addColorStop(0.5, "#60a5fa");
-      gradient.addColorStop(1, "#c084fc");
-      drawing.fillStyle = gradient;
-      const count = 32;
-      const gap = 4;
-      const barWidth = Math.max(1, (width - 32 - gap * (count - 1)) / count);
-      for (let i = 0; i < count; i++) {
-        const bin = Math.floor(Math.pow(i / count, 1.65) * 100) + 1;
-        const amplitude = active ? frequencies[bin] / 255 : 0;
-        const barHeight = 4 + amplitude * (height - 40);
-        drawing.globalAlpha = active ? 0.65 + amplitude * 0.35 : 0.35;
+      const cx = width / 2;
+      const cy = height / 2;
+      const size = Math.min(width, height);
+      const bass = frequencies.slice(1, 12).reduce((sum, value) => sum + value, 0) / (11 * 255);
+      const energy = frequencies.reduce((sum, value) => sum + value, 0) / (128 * 255);
+      const time = active ? (audioRef.current?.currentTime ?? 0) : 0;
+      const radius = size * (0.2 + bass * 0.025);
+      const halo = drawing.createRadialGradient(cx, cy, 0, cx, cy, size * 0.52);
+      halo.addColorStop(0, `rgba(89,58,180,${0.2 + energy * 0.3})`);
+      halo.addColorStop(0.45, `rgba(16,122,155,${0.12 + bass * 0.13})`);
+      halo.addColorStop(1, "rgba(5,7,18,0)");
+      drawing.fillStyle = halo;
+      drawing.fillRect(0, 0, width, height);
+
+      // Deterministic stars and orbital trails; real frequency energy shapes the rings.
+      for (let i = 0; i < 38; i++) {
+        const x = ((i * 73.37 + 19) % 100) / 100 * width;
+        const y = ((i * 43.71 + 11) % 100) / 100 * height;
+        drawing.fillStyle = `rgba(180,210,255,${0.12 + (i % 4) * 0.06 + energy * 0.15})`;
         drawing.beginPath();
-        drawing.roundRect(16 + i * (barWidth + gap), (height - barHeight) / 2, barWidth, barHeight, 3);
+        drawing.arc(x, y, i % 5 === 0 ? 1.4 : 0.7, 0, Math.PI * 2);
         drawing.fill();
       }
+      for (let ring = 0; ring < 4; ring++) {
+        const gradient = drawing.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+        gradient.addColorStop(0, "#67e8f9");
+        gradient.addColorStop(0.45, "#818cf8");
+        gradient.addColorStop(1, "#e879f9");
+        drawing.strokeStyle = gradient;
+        drawing.lineWidth = ring === 0 ? 2.5 : 1.2;
+        drawing.globalAlpha = 0.85 - ring * 0.16;
+        drawing.shadowColor = ring % 2 ? "#a78bfa" : "#22d3ee";
+        drawing.shadowBlur = ring === 0 ? 16 : 7;
+        drawing.beginPath();
+        for (let i = 0; i <= 160; i++) {
+          const angle = i / 160 * Math.PI * 2;
+          const bin = 1 + Math.floor((1 - Math.cos(angle * 2)) * 45);
+          const wave = frequencies[bin] / 255;
+          const r = radius + ring * size * 0.035 + Math.sin(angle * 3 + time * 0.5 + ring) * size * 0.012
+            + wave * size * 0.055 * Math.sin(angle * 5 - time * 0.4 + ring);
+          const x = cx + Math.cos(angle) * r;
+          const y = cy + Math.sin(angle) * r;
+          if (i === 0) drawing.moveTo(x, y); else drawing.lineTo(x, y);
+        }
+        drawing.closePath();
+        drawing.stroke();
+      }
+      drawing.shadowBlur = 0;
       drawing.globalAlpha = 1;
+      for (let i = 0; i < 3; i++) {
+        const angle = time * (0.12 + i * 0.03) + i * Math.PI * 2 / 3;
+        const r = radius + size * (0.16 + i * 0.025);
+        drawing.strokeStyle = "rgba(148,163,184,0.12)";
+        drawing.beginPath();
+        drawing.ellipse(cx, cy, r, r * 0.72, i * 0.8, 0, Math.PI * 2);
+        drawing.stroke();
+        drawing.fillStyle = ["#67e8f9", "#c4b5fd", "#f0abfc"][i];
+        drawing.beginPath();
+        drawing.arc(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r, 2 + energy * 2, 0, Math.PI * 2);
+        drawing.fill();
+      }
+      drawing.textAlign = "center";
+      drawing.textBaseline = "middle";
+      drawing.fillStyle = "#e0f2fe";
+      drawing.font = `600 ${Math.round(size * 0.065)}px sans-serif`;
+      drawing.fillText("N M A I", cx, cy - 5);
+      drawing.fillStyle = "rgba(165,180,252,0.8)";
+      drawing.font = "9px sans-serif";
+      drawing.fillText("F E E L   T H E   S O U N D", cx, cy + 19);
       if (active) frame = requestAnimationFrame(draw);
     }
     function refresh() { cancelAnimationFrame(frame); draw(); }
@@ -188,9 +239,9 @@ function PlaylistPlayer({ signedIn, playlist, onSelectPlaylist }: {
 
       <div className="mt-8 grid items-start gap-5 md:grid-cols-[1.1fr_1fr]">
         <section aria-label="Music player" className="min-w-0 rounded-3xl border border-cyan-400/20 bg-[#080D17] p-5 sm:p-7">
-          <div className="relative h-44 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/30 via-purple-600/25 to-cyan-500/20">
+          <div className="relative h-64 overflow-hidden rounded-2xl border border-indigo-300/10 bg-[#070b18] sm:h-72">
             <canvas ref={canvasRef} className="h-full w-full" aria-hidden="true" />
-            <span className="absolute bottom-3 left-4 text-[10px] font-semibold uppercase tracking-widest text-cyan-200">{visualizerUnavailable ? "Enjoy the music" : "Audio spectrum"}</span>
+            <span className="absolute bottom-4 left-4 text-[9px] font-semibold uppercase tracking-[0.22em] text-cyan-200/70">{visualizerUnavailable ? "Enjoy the music" : playing ? "Immersed in sound" : "Your moment of music"}</span>
           </div>
           <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-cyan-300">{playing ? "Now playing" : "Ready to play"}</p>
           <h2 className="mt-2 text-2xl font-bold text-white" aria-live="polite">{track?.name ?? "Choose a track"}</h2>
