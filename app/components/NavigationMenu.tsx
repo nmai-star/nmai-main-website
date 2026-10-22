@@ -45,7 +45,7 @@ export default function NavigationMenu({ signedIn = true, children }: { signedIn
         <button type="button" onClick={close} aria-label="Close navigation menu" className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 hover:bg-white/5"><X size={20} /></button>
       </div>
       <nav aria-label="Main navigation links" className="space-y-2 p-4">
-        {(signedIn ? links : links.filter(link => link.href === "/" || link.href === "/my-books")).map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={close} aria-current={pathname === href ? "page" : undefined}
+        {(signedIn ? links : links.filter(link => link.href === "/" || link.href === "/my-books" || link.href === "/live-music")).map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={close} aria-current={pathname === href ? "page" : undefined}
           className={`flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm ${pathname === href ? "border border-cyan-400/20 bg-cyan-400/10 text-cyan-300" : "text-slate-300 hover:bg-white/5 hover:text-white"}`}><Icon size={18} />{label}</Link>)}
         <Link href="/#about" onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5"><Compass size={18} />About NMAI</Link>
         <Link href="/#learn" onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5"><Sparkles size={18} />What You’ll Learn</Link>

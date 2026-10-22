@@ -38,7 +38,7 @@ export async function readMusicPlaylist(request: typeof fetch = fetch): Promise<
   const tracks: MusicTrack[] = [];
   for (let i = 0; i < uniqueIds.length; i += 8) {
     const batch = await Promise.all(uniqueIds.slice(i, i + 8).map(async id => {
-      const page = await request(`https://www.flowmusic.app/song/${id}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(10000) });
+      const page = await request(`https://www.flowmusic.app/song/${id}`, { cache: "no-store", signal: AbortSignal.timeout(10000) });
       if (page.status === 404) return null;
       if (!page.ok) throw new Error("Song unavailable");
       return parseTrack(await page.text(), id);

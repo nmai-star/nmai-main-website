@@ -8,7 +8,7 @@ import ThemeToggle from "../components/ThemeToggle";
 
 import { type MusicTrack } from "@/lib/music-playlist";
 
-export default function MusicPlayer() {
+export default function MusicPlayer({ signedIn }: { signedIn: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioGraph = useRef<{ context: AudioContext; analyser: AnalyserNode; source: MediaElementAudioSourceNode } | null>(null);
@@ -116,7 +116,11 @@ export default function MusicPlayer() {
         if (!Array.isArray(data.tracks)) throw new Error("Invalid playlist");
         if (cancelled) return;
         setTracks(data.tracks);
-        setTrack(current => current ?? data.tracks[0] ?? null);
+        // Refresh the selected song's details without restarting its audio.
+        // A removed song may finish playing; the next selection uses the new list.
+        setTrack(current => current
+          ? data.tracks.find((item: MusicTrack) => item.id === current.id) ?? current
+          : data.tracks[0] ?? null);
         if (audioRef.current && !audioRef.current.getAttribute("src") && data.tracks[0]) {
           audioRef.current.src = data.tracks[0].source;
         }
@@ -126,7 +130,7 @@ export default function MusicPlayer() {
       } finally { inFlight = false; }
     }
     void sync();
-    const timer = window.setInterval(() => void sync(), 60000);
+    const timer = window.setInterval(() => void sync(), 30000);
     const refresh = () => void sync();
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
@@ -159,8 +163,8 @@ export default function MusicPlayer() {
 
   return <div className="min-h-screen bg-[#05070D] text-slate-100">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-5 sm:px-10">
-      <div className="flex items-center gap-3"><NavigationMenu /><Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white"><ArrowLeft size={16} />Dashboard</Link></div>
-      <div className="flex items-center gap-4"><Link href="/ai-tools" className="text-sm text-slate-400 hover:text-white">AI Tools</Link><ThemeToggle /></div>
+      <div className="flex items-center gap-3"><NavigationMenu signedIn={signedIn} /><Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white"><ArrowLeft size={16} />Dashboard</Link></div>
+      <div className="flex items-center gap-4">{signedIn ? <Link href="/ai-tools" className="text-sm text-slate-400 hover:text-white">AI Tools</Link> : <Link href="/login" className="text-sm text-slate-300 hover:text-white">Login</Link>}<ThemeToggle /></div>
     </header>
     <main className="mx-auto max-w-5xl px-5 py-10 sm:px-10">
       <h1 className="text-3xl font-bold tracking-tight text-white">Live Music</h1>
