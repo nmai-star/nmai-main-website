@@ -2,7 +2,24 @@ export const PLAYLIST_ID = "66fccc15-06e8-4fd2-af12-a4f62ea6f356";
 export const MUSIC_PLAYLISTS = [
   { id: PLAYLIST_ID, name: "EDM, PHONK", mood: "Energy & intensity" },
   { id: "8690326b-80d6-4d4e-9773-3e121ee81b22", name: "132 BPM DJ Workout Mix", mood: "Move to the beat" },
-  { id: "33af19ac-feca-4a6d-be50-b0914eecfee8", name: "Love and Romantic", mood: "Slow down & unwind" },
+  { id: "40633033-6b2d-4558-8510-b4fc65ec157b", name: "EDM - Festival & Club" },
+  { id: "1f6aaae0-0a05-4403-9b69-7bf4cb7b9c65", name: "Channel Intros & Loops" },
+  { id: "3c79b7f0-693a-44a6-8e1b-9faeb9803a9d", name: "House - Deep, Lounge & Piano" },
+  { id: "c224aff9-4cda-493f-9d1e-04ad936249ce", name: "House - Tropical, Organic, Afro & Latin" },
+  { id: "981053e2-c959-424d-9579-8608e20e49ba", name: "Lo-Fi & Chillhop - Study and Background" },
+  { id: "3e0e06f1-9f82-44b9-84c3-49e572f3c103", name: "Motivational - Ads & Corporate Background" },
+  { id: "d0e87a9a-b331-4357-bf30-06c1d8ffc9d7", name: "Telugu Pop & Romantic Ballads" },
+  { id: "923fafec-12e0-49c2-a3fc-fae7aa2ade68", name: "Phonk - Drift & Electronic Fusion" },
+  { id: "04318def-3346-4378-9d5d-97675bcb74f7", name: "House - Tech, Progressive & Future" },
+  { id: "2ec234f5-3b58-44f9-899f-94222f0d37e6", name: "Indian Fusion - House & Techno" },
+  { id: "ef179690-9942-43d5-99ac-10bfaf81f1c1", name: "Cinematic & Orchestral Electronic" },
+  { id: "e0ce8396-84c3-4ebe-9627-9f60110f9984", name: "Ambient - Chill & Atmospheric" },
+  { id: "c04cc801-8295-4d9c-a92a-89ac4b9f4632", name: "Jazz & Electronic Jazz Fusion" },
+  { id: "f0f132c6-547e-4721-b1d2-81b14500b349", name: "Rock & Electronic Rock Fusion" },
+  { id: "0cd1e15a-d80d-4371-9b83-6fa31d1ab2e8", name: "Workout - High Energy Electronic" },
+  { id: "a69aec60-c475-4347-99c3-777436ad2bbc", name: "Techno - Dark, Industrial & Peak Time" },
+  { id: "40f55d50-7867-4040-bbcf-6388833115ec", name: "Trance - Uplifting, Progressive & Psy" },
+  { id: "8b30bafc-ddf7-414a-a18a-a82d6043826c", name: "Telugu Romantic Lo-Fi & Acoustic" },
 ];
 export const PLAYLIST_URL = `https://www.flowmusic.app/playlist/${PLAYLIST_ID}`;
 export type MusicTrack = { id: string; name: string; duration: string; description: string; source: string };

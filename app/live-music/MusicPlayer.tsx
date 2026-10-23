@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Repeat, SkipBack, SkipForward } from "lucide-react";
+import { ArrowLeft, ChevronDown, ListMusic, Repeat, SkipBack, SkipForward } from "lucide-react";
 import NavigationMenu from "../components/NavigationMenu";
 import ThemeToggle from "../components/ThemeToggle";
 
@@ -228,13 +228,20 @@ function PlaylistPlayer({ signedIn, playlist, onSelectPlaylist }: {
     </header>
     <main className="mx-auto max-w-5xl px-5 py-10 sm:px-10">
       <h1 className="text-3xl font-bold tracking-tight text-white">Live Music</h1>
-      <div aria-label="Choose a playlist" className="mt-6 grid gap-3 sm:grid-cols-3">
-        {MUSIC_PLAYLISTS.map((item, index) => <button key={item.id} type="button" aria-pressed={item.id === playlist.id} onClick={() => onSelectPlaylist(item)}
-          className={`rounded-2xl border p-5 text-left transition focus-visible:outline-2 focus-visible:outline-cyan-300 ${item.id === playlist.id ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-[#080D17] hover:border-cyan-400/30"}`}>
-          <span className="text-xs font-semibold text-cyan-300">PLAYLIST {String(index + 1).padStart(2, "0")}</span>
-          <span className="mt-2 block font-semibold text-white">{item.name}</span>
-          <span className="mt-2 block text-xs text-slate-400">{item.mood}</span>
-        </button>)}
+      <div className="mt-6 rounded-2xl border border-cyan-400/20 bg-gradient-to-r from-cyan-400/10 to-indigo-400/5 p-4 sm:p-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <label htmlFor="music-playlist" className="flex items-center gap-2 text-sm font-semibold text-cyan-300"><ListMusic size={18} />Choose a playlist</label>
+          <span className="shrink-0 rounded-full border border-white/10 px-3 py-1 text-xs text-slate-400">{MUSIC_PLAYLISTS.length} playlists</span>
+        </div>
+        <div className="relative">
+          <select id="music-playlist" value={playlist.id} onChange={event => {
+            const next = MUSIC_PLAYLISTS.find(item => item.id === event.target.value);
+            if (next) onSelectPlaylist(next);
+          }} className="min-h-14 w-full appearance-none rounded-xl border border-white/15 bg-[#080D17] py-3 pl-4 pr-12 text-sm font-semibold text-white outline-none transition hover:border-cyan-400/40 focus-visible:ring-2 focus-visible:ring-cyan-400 sm:text-base">
+            {MUSIC_PLAYLISTS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <ChevronDown size={20} aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-cyan-300" />
+        </div>
       </div>
 
       <div className="mt-8 grid items-start gap-5 md:grid-cols-[1.1fr_1fr]">
