@@ -140,6 +140,8 @@ html[data-theme="light"] { --background:#f8fafc; --foreground:#0f172a; --surface
 html[data-theme="ocean"] { --background:#041522; --foreground:#eef8ff; --surface:#082236; --panel:#0b2e46; --muted:#afc9de; --theme-border:#7dd3fc33; --accent:#7dd3fc; --accent-strong:#38bdf8; }
 html[data-theme="forest"] { --background:#071b16; --foreground:#f0fdf7; --surface:#0e2b22; --panel:#153b30; --muted:#b0cec1; --theme-border:#6ee7b733; --accent:#6ee7b7; --accent-strong:#34d399; }
 html[data-theme="rose"] { --background:#201019; --foreground:#fff1f7; --surface:#311b29; --panel:#442236; --muted:#d8b8cc; --theme-border:#f9a8d433; --accent:#f9a8d4; --accent-strong:#f472b6; }
+html[data-theme="monochrome"] { --background:#050505; --foreground:#fafafa; --surface:#111111; --panel:#242424; --muted:#b8b8b8; --theme-border:#ffffff30; --accent:#f5f5f5; --accent-strong:#e5e5e5; filter:grayscale(1); }
+html[data-theme="monochrome"] dialog { filter:grayscale(1); }
 @theme inline { --color-cyan-300:var(--accent); --color-cyan-400:var(--accent-strong); }
 html[data-theme] [class*="bg-[#0"] { background-color:var(--surface) !important; }
 html[data-theme] [class~="bg-[#05070D]"],html[data-theme] [class~="bg-[#04060C]"] { background-color:var(--background) !important; }

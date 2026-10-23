@@ -37,7 +37,7 @@ export default function RootLayout({
               let theme = 'dark';
               try {
                 const saved = localStorage.getItem('nmai-theme');
-                if (['dark', 'light', 'ocean', 'forest', 'rose'].includes(saved)) theme = saved;
+                if (['dark', 'light', 'ocean', 'forest', 'rose', 'monochrome'].includes(saved)) theme = saved;
               } catch {}
               document.documentElement.dataset.theme = theme;
               document.documentElement.classList.add(theme === 'light' ? 'light' : 'dark');

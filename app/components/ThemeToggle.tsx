@@ -9,6 +9,7 @@ const themes = [
   { id: "ocean", name: "Ocean", description: "Deep blue", colors: ["#041522", "#0b2e46", "#7dd3fc"] },
   { id: "forest", name: "Forest", description: "Calm green", colors: ["#071b16", "#153b30", "#6ee7b7"] },
   { id: "rose", name: "Rose", description: "Warm & soft", colors: ["#201019", "#442236", "#f9a8d4"] },
+  { id: "monochrome", name: "Black & White", description: "Timeless contrast", colors: ["#000000", "#404040", "#ffffff"] },
 ] as const;
 type Theme = typeof themes[number]["id"];
 function snapshot(): Theme {
