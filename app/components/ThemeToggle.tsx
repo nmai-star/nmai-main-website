@@ -9,7 +9,7 @@ const themes = [
   { id: "ocean", name: "Ocean", description: "Deep blue", colors: ["#041522", "#0b2e46", "#7dd3fc"] },
   { id: "forest", name: "Forest", description: "Calm green", colors: ["#071b16", "#153b30", "#6ee7b7"] },
   { id: "rose", name: "Rose", description: "Warm & soft", colors: ["#201019", "#442236", "#f9a8d4"] },
-  { id: "monochrome", name: "Black & White", description: "Timeless contrast", colors: ["#000000", "#404040", "#ffffff"] },
+  { id: "monochrome", name: "Black & White", description: "White with black text", colors: ["#ffffff", "#e5e5e5", "#000000"] },
 ] as const;
 type Theme = typeof themes[number]["id"];
 function snapshot(): Theme {
@@ -19,8 +19,9 @@ function snapshot(): Theme {
 function applyTheme(id: Theme) {
   const root = document.documentElement;
   root.dataset.theme = id;
-  root.classList.toggle("light", id === "light");
-  root.classList.toggle("dark", id !== "light");
+  const isLight = id === "light" || id === "monochrome";
+  root.classList.toggle("light", isLight);
+  root.classList.toggle("dark", !isLight);
   window.dispatchEvent(new Event("nmai-theme-change"));
 }
 function subscribe(listener: () => void) {

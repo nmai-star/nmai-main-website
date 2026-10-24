@@ -140,7 +140,7 @@ html[data-theme="light"] { --background:#f8fafc; --foreground:#0f172a; --surface
 html[data-theme="ocean"] { --background:#041522; --foreground:#eef8ff; --surface:#082236; --panel:#0b2e46; --muted:#afc9de; --theme-border:#7dd3fc33; --accent:#7dd3fc; --accent-strong:#38bdf8; }
 html[data-theme="forest"] { --background:#071b16; --foreground:#f0fdf7; --surface:#0e2b22; --panel:#153b30; --muted:#b0cec1; --theme-border:#6ee7b733; --accent:#6ee7b7; --accent-strong:#34d399; }
 html[data-theme="rose"] { --background:#201019; --foreground:#fff1f7; --surface:#311b29; --panel:#442236; --muted:#d8b8cc; --theme-border:#f9a8d433; --accent:#f9a8d4; --accent-strong:#f472b6; }
-html[data-theme="monochrome"] { --background:#050505; --foreground:#fafafa; --surface:#111111; --panel:#242424; --muted:#b8b8b8; --theme-border:#ffffff30; --accent:#f5f5f5; --accent-strong:#e5e5e5; }
+html[data-theme="monochrome"] { color-scheme:light; --background:#fff; --foreground:#000; --surface:#fff; --panel:#f0f0f0; --muted:#525252; --theme-border:#00000026; --accent:#000; --accent-strong:#171717; }
 
 @theme inline { --color-cyan-300:var(--accent); --color-cyan-400:var(--accent-strong); }
 html[data-theme] [class*="bg-[#0"] { background-color:var(--surface) !important; }
@@ -432,4 +432,13 @@ html[data-theme="monochrome"] {
   --color-rose-900: #171717;
   --color-rose-950: #0a0a0a;
 }
-html[data-theme="monochrome"] ::selection { background:#ffffff40; color:#ffffff; }
+/* White surfaces and dark typography without filtering colorful media. */
+html[data-theme="monochrome"] body { background:#fff !important; color:#000 !important; }
+html[data-theme="monochrome"] [class*="bg-gradient"] { background-image:linear-gradient(135deg,#f5f5f5,#fff) !important; }
+html[data-theme="monochrome"] [class*="text-"] { color:#000 !important; }
+html[data-theme="monochrome"] .text-transparent { color:transparent !important; background-image:linear-gradient(#000,#000) !important; }
+html[data-theme="monochrome"] :is(input,select,textarea) { background-color:#fff !important; color:#000 !important; }
+html[data-theme="monochrome"] :is(.bg-black\/40,.bg-slate-900,.bg-slate-950) { background-color:#f5f5f5 !important; }
+html[data-theme="monochrome"] :is(.bg-cyan-300,.bg-cyan-400,.bg-cyan-600,.bg-blue-500,.bg-blue-600,.bg-indigo-600,.bg-emerald-600),
+html[data-theme="monochrome"] :is(.bg-cyan-300,.bg-cyan-400,.bg-cyan-600,.bg-blue-500,.bg-blue-600,.bg-indigo-600,.bg-emerald-600) [class*="text-"] { background-color:#000; color:#fff !important; }
+html[data-theme="monochrome"] ::selection { background:#000; color:#fff; }

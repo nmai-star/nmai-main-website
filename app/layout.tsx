@@ -40,7 +40,7 @@ export default function RootLayout({
                 if (['dark', 'light', 'ocean', 'forest', 'rose', 'monochrome'].includes(saved)) theme = saved;
               } catch {}
               document.documentElement.dataset.theme = theme;
-              document.documentElement.classList.add(theme === 'light' ? 'light' : 'dark');
+              document.documentElement.classList.add(theme === 'light' || theme === 'monochrome' ? 'light' : 'dark');
             `,
           }}
         />
